@@ -448,7 +448,8 @@ void AC_PosControl::get_stopping_point_z(Vector3f& stopping_point) const
 /// init_takeoff - initialises target altitude if we are taking off
 void AC_PosControl::init_takeoff()
 {
-    const Vector3f& curr_pos = _inav.get_position();
+    const Vector3f curr_pos = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_position() : _inav.get_position());
+    //const Vector3f& curr_pos = _inav.get_position();
 
     _pos_target.z = curr_pos.z;
 
@@ -704,8 +705,10 @@ void AC_PosControl::set_target_to_stopping_point_xy()
 ///     set_leash_length() should have been called before this method
 void AC_PosControl::get_stopping_point_xy(Vector3f &stopping_point) const
 {
-    const Vector3f curr_pos = _inav.get_position();
-    Vector3f curr_vel = _inav.get_velocity();
+    const Vector3f curr_pos = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_position() : _inav.get_position());
+    //const Vector3f curr_pos = _inav.get_position();
+    //Vector3f curr_vel = _inav.get_velocity();
+    Vector3f curr_vel = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_velocity() : _inav.get_velocity());
     float linear_distance;      // the distance at which we swap from a linear to sqrt response
     float linear_velocity;      // the velocity above which we swap from a linear to sqrt response
     float stopping_dist;		// the distance within the vehicle can stop
@@ -755,7 +758,8 @@ float AC_PosControl::get_distance_to_target() const
 /// get_bearing_to_target - get bearing to target position in centi-degrees
 int32_t AC_PosControl::get_bearing_to_target() const
 {
-    return get_bearing_cd(_inav.get_position(), _pos_target);
+    Vector3f curr_pos = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_position() : _inav.get_position());
+    return get_bearing_cd(curr_pos, _pos_target);
 }
 
 // is_active_xy - returns true if the xy position controller has been run very recently
@@ -876,12 +880,16 @@ void AC_PosControl::init_vel_controller_xyz()
     _flags.reset_accel_to_lean_xy = true;
 
     // set target position
-    const Vector3f& curr_pos = _inav.get_position();
+    const Vector3f curr_pos = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_position() : _inav.get_position());
+    //const Vector3f& curr_pos = _inav.get_position();
+
+
     set_xy_target(curr_pos.x, curr_pos.y);
     set_alt_target(curr_pos.z);
 
     // move current vehicle velocity into feed forward velocity
-    const Vector3f& curr_vel = _inav.get_velocity();
+    const Vector3f curr_vel = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_velocity() : _inav.get_velocity());
+    //const Vector3f& curr_vel = _inav.get_velocity();
     set_desired_velocity(curr_vel);
 
     // set vehicle acceleration to zero
@@ -1001,7 +1009,8 @@ void AC_PosControl::desired_vel_to_pos(float nav_dt)
 ///     converts desired accelerations provided in lat/lon frame to roll/pitch angles
 void AC_PosControl::run_xy_controller(float dt, float ekfNavVelGainScaler)
 {
-    Vector3f curr_pos = _inav.get_position();
+    Vector3f curr_pos = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_position() : _inav.get_position());
+    //Vector3f curr_pos = _inav.get_position();
     float kP = ekfNavVelGainScaler * _p_pos_xy.kP(); // scale gains to compensate for noisy optical flow measurement in the EKF
 
     // avoid divide by zero
@@ -1038,8 +1047,9 @@ void AC_PosControl::run_xy_controller(float dt, float ekfNavVelGainScaler)
     if (_flags.vehicle_horiz_vel_override) {
         _flags.vehicle_horiz_vel_override = false;
     } else {
-        _vehicle_horiz_vel.x = _inav.get_velocity().x;
-        _vehicle_horiz_vel.y = _inav.get_velocity().y;
+        const Vector3f curr_vel = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_velocity() : _inav.get_velocity());
+        _vehicle_horiz_vel.x = curr_vel.x;
+        _vehicle_horiz_vel.y = curr_vel.y;
     }
 
     // calculate velocity error

@@ -5,7 +5,7 @@
  */
 
 #ifndef GUIDED_LOOK_AT_TARGET_MIN_DISTANCE_CM
- # define GUIDED_LOOK_AT_TARGET_MIN_DISTANCE_CM     500     // point nose at target if it is more than 5m away
+ # define GUIDED_LOOK_AT_TARGET_MIN_DISTANCE_CM     20     // point nose at target if it is more than 5m away
 #endif
 
 #define GUIDED_POSVEL_TIMEOUT_MS    3000    // guided mode's position-velocity controller times out after 3seconds with no new updates
@@ -94,6 +94,7 @@ void Copter::ModeGuided::pos_control_start()
 
     // initialise yaw
     auto_yaw.set_mode_to_default(false);
+    auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
 }
 
 // initialise guided mode's velocity controller

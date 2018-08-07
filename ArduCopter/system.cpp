@@ -283,6 +283,8 @@ void Copter::init_ardupilot()
     
     hal.console->printf("\nReady to FLY ");
 
+    ext_nav.init(serial_manager);
+
     // flag that initialisation has completed
     ap.initialised = true;
 }

@@ -83,6 +83,8 @@
 #include <AP_SmartRTL/AP_SmartRTL.h>
 #include <AP_TempCalibration/AP_TempCalibration.h>
 
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
+
 // Configuration
 #include "defines.h"
 #include "config.h"
@@ -523,7 +525,7 @@ private:
     AC_Avoid avoid{ahrs, fence, g2.proximity};
 # endif
 #endif
-
+    AC_Ext_Nav ext_nav;
     // Rally library
 #if AC_RALLY == ENABLED
     AP_Rally_Copter rally{ahrs};

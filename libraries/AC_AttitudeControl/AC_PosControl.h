@@ -12,6 +12,7 @@
 #include <AP_Motors/AP_Motors.h>          // motors library
 #include <AP_Vehicle/AP_Vehicle.h>         // common vehicle parameters
 
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 
 // position controller default definitions
 #define POSCONTROL_ACCELERATION_MIN             50.0f   // minimum horizontal acceleration in cm/s/s - used for sanity checking acceleration in leash length calculation
@@ -378,6 +379,8 @@ protected:
     AC_PID      _pid_accel_z;
     AC_P        _p_pos_xy;
     AC_PID_2D   _pid_vel_xy;
+
+    AC_Ext_Nav       _extNav;
 
     // internal variables
     float       _dt;                    // time difference (in seconds) between calls from the main program

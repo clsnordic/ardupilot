@@ -520,6 +520,10 @@ const AP_Param::Info Copter::var_info[] = {
     // @Path: ../libraries/AP_Compass/AP_Compass.cpp
     GOBJECT(compass,        "COMPASS_", Compass),
 
+    // @Group: EXT_NAV_
+    // @Path: ../libraries/AC_Ext_Nav/AC_Ext_Nav.cpp
+    GOBJECT(ext_nav,        "EXT_NAV_", AC_Ext_Nav),
+
     // @Group: INS_
     // @Path: ../libraries/AP_InertialSensor/AP_InertialSensor.cpp
     GOBJECT(ins,            "INS_", AP_InertialSensor),

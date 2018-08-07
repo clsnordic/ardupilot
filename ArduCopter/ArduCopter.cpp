@@ -140,6 +140,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #if MOUNT == ENABLED
     SCHED_TASK_CLASS(AP_Mount,             &copter.camera_mount,        update,          50,  75),
 #endif
+    //Receiver external navigation data
+    SCHED_TASK_CLASS(AC_Ext_Nav, &copter.ext_nav, update, 100 , 100),
 #if CAMERA == ENABLED
     SCHED_TASK_CLASS(AP_Camera,            &copter.camera,              update_trigger,  50,  75),
 #endif

@@ -310,6 +310,7 @@ public:
 
         //
         // 210: Waypoint data
+        k_param_ext_nav,
         //
         k_param_waypoint_mode = 210, // remove
         k_param_command_total,       // remove

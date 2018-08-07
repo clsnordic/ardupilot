@@ -10,6 +10,8 @@
 #include <AP_Terrain/AP_Terrain.h>
 #include <AC_Avoidance/AC_Avoid.h>                 // Stop at fence library
 
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
+
 // maximum velocities and accelerations
 #define WPNAV_ACCELERATION              100.0f      // defines the default velocity vs distant curve.  maximum acceleration in cm/s/s that position controller asks for from acceleration controller
 #define WPNAV_ACCELERATION_MIN           50.0f      // minimum acceleration in cm/s/s - used for sanity checking _wp_accel parameter
@@ -272,6 +274,7 @@ protected:
     AP_Terrain              *_terrain = nullptr;
     AC_Avoid                *_avoid = nullptr;
 
+    AC_Ext_Nav       _extNav;
     // parameters
     AP_Float    _wp_speed_cms;          // maximum horizontal speed in cm/s during missions
     AP_Float    _wp_speed_up_cms;       // climb speed target in cm/s

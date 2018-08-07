@@ -63,14 +63,14 @@ const AP_Param::GroupInfo AP_SerialManager::var_info[] = {
     // @Values: -1:None, 1:MAVLink1, 2:MAVLink2, 3:Frsky D, 4:Frsky SPort, 5:GPS, 7:Alexmos Gimbal Serial, 8:SToRM32 Gimbal Serial, 9:Rangefinder, 10:FrSky SPort Passthrough (OpenTX), 11:Lidar360, 13:Beacon, 14:Volz servo out, 15:SBus servo out, 16:ESC Telemetry, 17:Devo Telemetry
     // @User: Standard
     // @RebootRequired: True
-    AP_GROUPINFO("1_PROTOCOL",  1, AP_SerialManager, state[1].protocol, SerialProtocol_MAVLink),
+    AP_GROUPINFO("1_PROTOCOL",  1, AP_SerialManager, state[1].protocol, SerialProtocol_Ext_Nav),
 
     // @Param: 1_BAUD
     // @DisplayName: Telem1 Baud Rate
     // @Description: The baud rate used on the Telem1 port. The APM2 can support all baudrates up to 115, and also can support 500. The PX4 can support rates of up to 1500. If you setup a rate you cannot support on APM2 and then can't connect to your board you should load a firmware from a different vehicle type. That will reset all your parameters to defaults.
     // @Values: 1:1200,2:2400,4:4800,9:9600,19:19200,38:38400,57:57600,111:111100,115:115200,500:500000,921:921600,1500:1500000
     // @User: Standard
-    AP_GROUPINFO("1_BAUD", 2, AP_SerialManager, state[1].baud, AP_SERIALMANAGER_MAVLINK_BAUD/1000),
+    AP_GROUPINFO("1_BAUD", 2, AP_SerialManager, state[1].baud, AP_SERIALMANAGER_EXT_NAV_BAUD/1000),
 
     // @Param: 2_PROTOCOL
     // @DisplayName: Telemetry 2 protocol selection
@@ -210,6 +210,11 @@ void AP_SerialManager::init()
                     state[i].uart->begin(map_baudrate(state[i].baud), 
                                          AP_SERIALMANAGER_MAVLINK_BUFSIZE_RX,
                                          AP_SERIALMANAGER_MAVLINK_BUFSIZE_TX);
+                    break;
+                case SerialProtocol_Ext_Nav:
+                    state[i].uart->begin(map_baudrate(state[i].baud),
+                                         AP_SERIALMANAGER_EXT_NAV_BUFSIZE_RX,
+                                         AP_SERIALMANAGER_EXT_NAV_BUFSIZE_TX);
                     break;
                 case SerialProtocol_FrSky_D:
                     // Note baudrate is hardcoded to 9600
