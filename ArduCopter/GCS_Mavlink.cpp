@@ -1186,6 +1186,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         bool yaw_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE;
         bool yaw_rate_ignore = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE;
 
+        //hal.console->printf("yaw_ignore: %d", yaw_ignore);
+
         /*
          * for future use:
          * bool force           = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_FORCE;

@@ -226,6 +226,7 @@ void Copter::loop()
 // Main loop - 400hz
 void Copter::fast_loop()
 {
+
     // update INS immediately to get current gyro data populated
     ins.update();
 

@@ -94,7 +94,7 @@ void Copter::ModeGuided::pos_control_start()
 
     // initialise yaw
     auto_yaw.set_mode_to_default(false);
-    auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
+    //auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
 }
 
 // initialise guided mode's velocity controller
@@ -681,6 +681,9 @@ void Copter::ModeGuided::set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_
         auto_yaw.set_fixed_yaw(yaw_cd / 100.0f, 0.0f, 0, relative_angle);
     } else if (use_yaw_rate) {
         auto_yaw.set_rate(yaw_rate_cds);
+    } else if (!use_yaw)
+    {
+        auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
     }
 }
 
