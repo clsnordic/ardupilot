@@ -14,6 +14,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
 
+
 class AC_Ext_Nav {
 public:
     AC_Ext_Nav();
@@ -44,6 +45,9 @@ public:
     inline Vector3f getLatestGyro() {
         return _latestGyroMeasurements;
     }
+    inline float getYaw() {
+        return _currYaw;
+    }
     //AP_Int8 _extNavPosEnabled;
 
 
@@ -53,9 +57,13 @@ private:
     AP_HAL::UARTDriver *_port;                  // UART used to send data to external
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
 
+    uint8_t extNavCalled;
+    uint32_t extNavTimer;
     Vector3f _extNavPos;
     Vector3f _extNavVel;
     Vector3f _latestGyroMeasurements;
+
+    float _currYaw;
 
     AP_Int8 _extNavPosEnabled;
     AP_Int8 _extNavCtrlEnabled;

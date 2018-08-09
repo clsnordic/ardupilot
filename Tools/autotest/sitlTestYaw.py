@@ -49,7 +49,7 @@ msg = vehicle.message_factory.set_position_target_local_ned_encode(
     0,       # time_boot_ms (not used)
     0, 0,    # target_system, target_component
     mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
-    0b0000111111111000, # type_mask (only speeds enabled)
+    0b0000101111111000, # type_mask (only speeds enabled)
     nPos, ePos, -10, # x, y, z positions
     0, 0, 0, # x, y, z velocity in m/s
     0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)

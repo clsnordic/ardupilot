@@ -83,6 +83,8 @@ void AC_Ext_Nav::update() {
               {
                  mavlink_ext_nav_posvelatt_t packet;
                  mavlink_msg_ext_nav_posvelatt_decode(&msg, &packet);
+
+                 _currYaw = packet.Yaw;
                  break;
               }
               case MAVLINK_MSG_ID_EXT_NAV_CTRL:

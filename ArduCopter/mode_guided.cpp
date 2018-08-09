@@ -455,6 +455,7 @@ void Copter::ModeGuided::pos_control_run()
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), auto_yaw.rate_cds());
     } else {
         // roll, pitch from waypoint controller, yaw heading from GCS or auto_heading()
+
         attitude_control->input_euler_angle_roll_pitch_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), auto_yaw.yaw(), true);
     }
 }
@@ -678,12 +679,17 @@ void Copter::ModeGuided::set_desired_velocity_with_accel_and_fence_limits(const 
 void Copter::ModeGuided::set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_angle)
 {
     if (use_yaw) {
-        auto_yaw.set_fixed_yaw(yaw_cd / 100.0f, 0.0f, 0, relative_angle);
+        auto_yaw.set_fixed_yaw(yaw_cd / 100.0f, 0.0f, 0, 0);
     } else if (use_yaw_rate) {
         auto_yaw.set_rate(yaw_rate_cds);
     } else if (!use_yaw)
     {
-        auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
+        //We're using relative_angle to indicate wether or not it's a velocity command or not.
+        // relative angle = 1 - position command
+        // Relative angle = 0 - velocity command
+        if(relative_angle) auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
+        else auto_yaw.set_mode(AUTO_YAW_LOOK_AHEAD);
+
     }
 }
 

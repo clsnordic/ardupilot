@@ -697,7 +697,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         // param7 : altitude [metres]
 
         float takeoff_alt = packet.param7 * 100;      // Convert m to cm
-
+        //hal.console->printf("takeoff: %f", takeoff_alt);
         if (!copter.flightmode->do_user_takeoff(takeoff_alt, is_zero(packet.param3))) {
             return MAV_RESULT_FAILED;
         }
@@ -717,7 +717,9 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         return MAV_RESULT_ACCEPTED;
 
     case MAV_CMD_NAV_LAND:
+        hal.console->printf("trying to land!\n");
         if (!copter.set_mode(LAND, MODE_REASON_GCS_COMMAND)) {
+            hal.console->printf("trying to land in loop!\n");
             return MAV_RESULT_FAILED;
         }
         return MAV_RESULT_ACCEPTED;
@@ -1187,6 +1189,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         bool yaw_rate_ignore = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE;
 
         //hal.console->printf("yaw_ignore: %d", yaw_ignore);
+        //hal.console->printf("\nyaw_rate_ignore: %d, yaw rate value: %f\n", yaw_rate_ignore, packet.yaw_rate);
+
 
         /*
          * for future use:
@@ -1241,9 +1245,9 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         if (!pos_ignore && !vel_ignore && acc_ignore) {
             copter.mode_guided.set_destination_posvel(pos_vector, vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
         } else if (pos_ignore && !vel_ignore && acc_ignore) {
-            copter.mode_guided.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
+            copter.mode_guided.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, 0);
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
-            copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
+            copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, 1);
         }
 
         break;
