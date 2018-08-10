@@ -9,7 +9,7 @@
 #define AC_EXT_NAV_H_
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <AP_HAL/AP_HAL.h>
-#include <Dataflash/Dataflash.h>
+//#include <Dataflash/Dataflash.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
