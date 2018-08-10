@@ -12,7 +12,7 @@
 #include <AC_PID/AC_PID.h>
 #include <AC_PID/AC_P.h>
 
-#include <AC_Ext_Nav/AC_Ext_Nav.h>
+
 
 #define AC_ATTITUDE_CONTROL_ANGLE_P                     4.5f             // default angle P gain for roll, pitch and yaw
 
@@ -408,6 +408,7 @@ protected:
     const AP_AHRS_View&  _ahrs;
     const AP_Vehicle::MultiCopter &_aparm;
     AP_Motors&          _motors;
+
 
 protected:
     /*

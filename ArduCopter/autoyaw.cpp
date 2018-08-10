@@ -74,6 +74,7 @@ void Copter::Mode::AutoYaw::set_mode(autopilot_yaw_mode yaw_mode)
     case AUTO_YAW_ROI:
         // look ahead until we know otherwise
         _roi_yaw = copter.ahrs.yaw_sensor;
+        //_roi_yaw = copter.ext_nav.getYaw();
         break;
 
     case AUTO_YAW_FIXED:
@@ -84,6 +85,7 @@ void Copter::Mode::AutoYaw::set_mode(autopilot_yaw_mode yaw_mode)
     case AUTO_YAW_LOOK_AHEAD:
         // Commanded Yaw to automatically look ahead.
         _look_ahead_yaw = copter.ahrs.yaw_sensor;
+        //_roi_yaw = copter.ext_nav.getYaw();
         break;
 
     case AUTO_YAW_RESETTOARMEDYAW:

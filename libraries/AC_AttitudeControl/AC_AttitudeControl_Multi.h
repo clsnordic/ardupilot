@@ -5,6 +5,7 @@
 
 #include "AC_AttitudeControl.h"
 #include <AP_Motors/AP_MotorsMulticopter.h>
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 
 // default rate controller PID gains
 #ifndef AC_ATC_MULTI_RATE_RP_P
@@ -41,7 +42,7 @@
 
 class AC_AttitudeControl_Multi : public AC_AttitudeControl {
 public:
-	AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_Vehicle::MultiCopter &aparm, AP_MotorsMulticopter& motors, float dt);
+	AC_AttitudeControl_Multi(AP_AHRS_View &ahrs, const AP_Vehicle::MultiCopter &aparm, AP_MotorsMulticopter& motors, float dt, AC_Ext_Nav& extNav);
 
 	// empty destructor to suppress compiler warning
 	virtual ~AC_AttitudeControl_Multi() {}
@@ -88,7 +89,7 @@ protected:
 
     // get maximum value throttle can be raised to based on throttle vs attitude prioritisation
     float get_throttle_avg_max(float throttle_in);
-
+    AC_Ext_Nav& _extNav;
     AP_MotorsMulticopter& _motors_multi;
     AC_PID                _pid_rate_roll;
     AC_PID                _pid_rate_pitch;

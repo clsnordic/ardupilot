@@ -39,12 +39,6 @@ void AC_Ext_Nav::update() {
     //hal.console->printf("\nAttempting to retrieve data!\n");
 
 
-    if (extNavPosEnabled() == 1) {
-        hal.console->printf("Ext nav pos enabled!\n");
-    }
-    if (extNavCtrlEnabled() == 1) {
-            hal.console->printf("Ext nav ctrl enabled!\n");
-        }
     if (_port != nullptr && _port->available() > 0)
     {
        uint16_t buff_len = _port->available();
@@ -103,10 +97,8 @@ void AC_Ext_Nav::update() {
            }
 
        }
-       /*_extNavPos.x = 1.0;
-       _extNavPos.y = 2.0;
-       _extNavPos.z = 3.0;
-       hal.console->printf("should have set values\n");*/
+
+       //hal.console->printf("should have set values\n");*/
 
 
 
@@ -117,6 +109,9 @@ void AC_Ext_Nav::update() {
                                                      AP_HAL::micros64(),
                                                      0);
     }
+    _extNavPos.x = 0.0;
+   _extNavPos.y = 0.0;
+   _extNavPos.z = 0.0;
     // hal.console->printf("\nExiting loop\n");
 }
 
