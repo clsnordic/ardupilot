@@ -23,10 +23,14 @@ public:
     void update();
 
     void init(const AP_SerialManager &serial_manager);
-    inline Vector3f get_position() const {
+    inline Vector3f get_position()  {
         return _extNavPos;
     }
-    inline Vector3f get_velocity() const {
+    inline Vector3f get_position2()  {
+
+        return _extNavPos;
+        }
+    inline Vector3f get_velocity()  {
         return _extNavVel;
     }
     static const struct AP_Param::GroupInfo var_info[];

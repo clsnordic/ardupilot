@@ -1,8 +1,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_InertialNav.h"
-
+#include <AP_HAL/AP_HAL.h>
 #if AP_AHRS_NAVEKF_AVAILABLE
-
+extern const AP_HAL::HAL& hal;
 /*
   A wrapper around the AP_InertialNav class which uses the NavEKF
   filter if available, and falls back to the AP_InertialNav filter
@@ -43,6 +43,15 @@ void AP_InertialNav_NavEKF::update(float dt)
         _pos_z_rate *= 100; // convert to cm/s
         _pos_z_rate = - _pos_z_rate; // InertialNav is NEU
     }
+    _extNavPos = _extNav.get_position();
+
+
+    //Print the value every 100th call
+    /*if (printCall == 100)
+    {
+        printCall = 0;
+        hal.console->printf("value of extNavPos: %f, %f, %f", _extNavPos.x,_extNavPos.y, _extNavPos.z);
+    } else printCall++; */
 }
 
 /**
@@ -75,7 +84,13 @@ struct Location AP_InertialNav_NavEKF::get_origin() const
  */
 const Vector3f &AP_InertialNav_NavEKF::get_position(void) const 
 {
+    if (_extNav.extNavPosEnabled() == 1)
+    {
+        return _extNavPos;
+
+    }
     return _relpos_cm;
+
 }
 
 /**
@@ -114,6 +129,7 @@ int32_t AP_InertialNav_NavEKF::get_longitude() const
  */
 const Vector3f &AP_InertialNav_NavEKF::get_velocity() const
 {
+    //if (_extNav.extNavPosEnabled() == 1) return _extNav.get_velocity();
     return _velocity_cm;
 }
 
@@ -153,6 +169,7 @@ float AP_InertialNav_NavEKF::get_altitude() const
  */
 float AP_InertialNav_NavEKF::get_velocity_z() const
 {
+
     return _velocity_cm.z;
 }
 

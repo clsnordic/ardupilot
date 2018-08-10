@@ -127,8 +127,11 @@ void Copter::ModeGuided::posvel_control_start()
     pos_control->set_speed_xy(wp_nav->get_speed_xy());
     pos_control->set_accel_xy(wp_nav->get_wp_acceleration());
 
+    /*const Vector3f curr_vel = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_velocity() : inertial_nav.get_velocity());
+    const Vector3f curr_pos = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_position() : inertial_nav.get_position()); */
     const Vector3f& curr_pos = inertial_nav.get_position();
     const Vector3f& curr_vel = inertial_nav.get_velocity();
+
 
     // set target position and velocity to current position and velocity
     pos_control->set_xy_target(curr_pos.x, curr_pos.y);

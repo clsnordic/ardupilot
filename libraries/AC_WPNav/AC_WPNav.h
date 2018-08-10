@@ -48,7 +48,7 @@ public:
     };
 
     /// Constructor
-    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control);
+    AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, const AC_Ext_Nav& extNav);
 
     /// provide pointer to terrain database
     void set_terrain(AP_Terrain* terrain_ptr) { _terrain = terrain_ptr; }
@@ -274,7 +274,7 @@ protected:
     AP_Terrain              *_terrain = nullptr;
     AC_Avoid                *_avoid = nullptr;
 
-    AC_Ext_Nav       _extNav;
+    const AC_Ext_Nav&       _extNav;
     // parameters
     AP_Float    _wp_speed_cms;          // maximum horizontal speed in cm/s during missions
     AP_Float    _wp_speed_up_cms;       // climb speed target in cm/s

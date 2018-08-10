@@ -6,15 +6,17 @@
 #pragma once
 
 #include <AP_NavEKF/AP_Nav_Common.h>              // definitions shared by inertial and ekf nav filters
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 
 class AP_InertialNav_NavEKF : public AP_InertialNav
 {
 public:
     // Constructor
-    AP_InertialNav_NavEKF(AP_AHRS_NavEKF &ahrs) :
+    AP_InertialNav_NavEKF(AP_AHRS_NavEKF &ahrs, AC_Ext_Nav& extNav) :
         AP_InertialNav(),
         _haveabspos(false),
-        _ahrs_ekf(ahrs)
+        _ahrs_ekf(ahrs),
+        _extNav(extNav)
         {}
 
     /**
@@ -98,10 +100,18 @@ public:
     float       get_velocity_z() const;
 
 private:
+
+
+
+
+    Vector3f _extNavPos;
+    uint8_t printCall;
+
     Vector3f _relpos_cm;   // NEU
     Vector3f _velocity_cm; // NEU
     float _pos_z_rate;
     struct Location _abspos;
     bool _haveabspos;
     AP_AHRS_NavEKF &_ahrs_ekf;
+    AC_Ext_Nav      &_extNav;
 };

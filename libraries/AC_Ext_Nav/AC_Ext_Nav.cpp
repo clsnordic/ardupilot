@@ -85,6 +85,9 @@ void AC_Ext_Nav::update() {
                  mavlink_msg_ext_nav_posvelatt_decode(&msg, &packet);
 
                  _currYaw = packet.Yaw;
+                 _extNavPos.x = packet.xPos;
+                 _extNavPos.y = packet.yPos;
+                 _extNavPos.z = packet.zPos;
                  break;
               }
               case MAVLINK_MSG_ID_EXT_NAV_CTRL:
@@ -100,6 +103,10 @@ void AC_Ext_Nav::update() {
            }
 
        }
+       /*_extNavPos.x = 1.0;
+       _extNavPos.y = 2.0;
+       _extNavPos.z = 3.0;
+       hal.console->printf("should have set values\n");*/
 
 
 

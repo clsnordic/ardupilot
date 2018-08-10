@@ -6,6 +6,8 @@
 #include <AP_Buffer/AP_Buffer.h>                  // FIFO buffer library
 #include <AP_NavEKF/AP_Nav_Common.h> // definitions shared by inertial and ekf nav filters
 
+
+
 /*
  * AP_InertialNav blends accelerometer data with gps and barometer data to improve altitude and position hold.
  *
@@ -112,6 +114,9 @@ public:
      * @return climbrate in cm/s (positive up)
      */
     virtual float       get_velocity_z() const = 0;
+
+
+
 };
 
 #if AP_AHRS_NAVEKF_AVAILABLE

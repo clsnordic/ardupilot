@@ -230,6 +230,8 @@ void Copter::fast_loop()
     // update INS immediately to get current gyro data populated
     ins.update();
 
+
+
     // run low level rate controllers that only require IMU data
     attitude_control->rate_controller_run();
 
