@@ -39,8 +39,8 @@ void AC_Ext_Nav::update() {
 
 
     //Set the hasReceived Ctrl og pos to 0 if it's been too long since we received a message. Now set it to 40ms (4 cycles)
-    if (AP_HAL::millis() - _msLastPosRec > 40) _hasReceivedPos = 0;
-    if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = 0;
+    if (AP_HAL::millis() - _msLastPosRec > 40) _hasReceivedPos = false;
+    if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = false;
     if (_port != nullptr && _port->available() > 0)
     {
        uint16_t buff_len = _port->available();
@@ -84,7 +84,7 @@ void AC_Ext_Nav::update() {
                  _extNavPos.x = packet.xPos;
                  _extNavPos.y = packet.yPos;
                  _extNavPos.z = packet.zPos;
-                 _hasReceivedPos = TRUE;
+                 _hasReceivedPos = true;
                  _msLastPosRec = AP_HAL::millis();
                  break;
               }
@@ -92,7 +92,7 @@ void AC_Ext_Nav::update() {
               {
                   mavlink_ext_nav_ctrl_t packet;
                   mavlink_msg_ext_nav_ctrl_decode(&msg, &packet);
-                  _hasReceivedCtrl = TRUE;
+                  _hasReceivedCtrl = true;
                   _msLastCtrlRec = AP_HAL::millis();
                   break;
               }

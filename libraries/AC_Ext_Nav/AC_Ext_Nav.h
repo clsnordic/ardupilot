@@ -64,14 +64,14 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
 
     uint8_t extNavCalled;
-    uint32_t _msLastPosRec;
-    uint32_t _msLastCtrlRec;
+    uint32_t _msLastPosRec = 0;
+    uint32_t _msLastCtrlRec = 0;
     Vector3f _extNavPos;
     Vector3f _extNavVel;
     Vector3f _latestGyroMeasurements;
 
-    bool _hasReceivedPos;
-    bool _hasReceivedCtrl;
+    bool _hasReceivedPos = false;
+    bool _hasReceivedCtrl = false;
 
     float _currYaw;
 
