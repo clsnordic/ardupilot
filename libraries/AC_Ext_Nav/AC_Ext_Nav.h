@@ -35,16 +35,18 @@ public:
     }
     static const struct AP_Param::GroupInfo var_info[];
 
-    inline AP_Int8 extNavPosEnabled() const {
-        return _extNavPosEnabled;
+    inline bool extNavPosEnabled() const {
+        if (!_hasReceivedPos) return false;
+        return (bool)_extNavPosEnabled;
     }
 
-    inline AP_Int8 extNavCtrlEnabled() const {
-        return _extNavCtrlEnabled;
+    inline bool extNavCtrlEnabled() const {
+        if (!_hasReceivedCtrl) return false;
+        return (bool)_extNavCtrlEnabled;
     }
-    inline AP_Int8 enableLowLevelCtrl() const {
+    /*inline AP_Int8 enableLowLevelCtrl() const {
         return _extLowLevelCtrlEnabled;
-    }
+    } */
 
     inline Vector3f getLatestGyro() {
         return _latestGyroMeasurements;
@@ -62,16 +64,20 @@ private:
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
 
     uint8_t extNavCalled;
-    uint32_t extNavTimer;
+    uint32_t _msLastPosRec;
+    uint32_t _msLastCtrlRec;
     Vector3f _extNavPos;
     Vector3f _extNavVel;
     Vector3f _latestGyroMeasurements;
+
+    bool _hasReceivedPos;
+    bool _hasReceivedCtrl;
 
     float _currYaw;
 
     AP_Int8 _extNavPosEnabled;
     AP_Int8 _extNavCtrlEnabled;
-    AP_Int8 _extLowLevelCtrlEnabled;
+    //AP_Int8 _extLowLevelCtrlEnabled;
 
 
 };

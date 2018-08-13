@@ -36,9 +36,11 @@ AC_Ext_Nav::AC_Ext_Nav() {
 
 void AC_Ext_Nav::update() {
     //Retrieve data if _port pointer is not null
-    //hal.console->printf("\nAttempting to retrieve data!\n");
 
 
+    //Set the hasReceived Ctrl og pos to 0 if it's been too long since we received a message. Now set it to 40ms (4 cycles)
+    if (AP_HAL::millis() - _msLastPosRec > 40) _hasReceivedPos = 0;
+    if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = 0;
     if (_port != nullptr && _port->available() > 0)
     {
        uint16_t buff_len = _port->available();
@@ -82,12 +84,16 @@ void AC_Ext_Nav::update() {
                  _extNavPos.x = packet.xPos;
                  _extNavPos.y = packet.yPos;
                  _extNavPos.z = packet.zPos;
+                 _hasReceivedPos = TRUE;
+                 _msLastPosRec = AP_HAL::millis();
                  break;
               }
               case MAVLINK_MSG_ID_EXT_NAV_CTRL:
               {
                   mavlink_ext_nav_ctrl_t packet;
                   mavlink_msg_ext_nav_ctrl_decode(&msg, &packet);
+                  _hasReceivedCtrl = TRUE;
+                  _msLastCtrlRec = AP_HAL::millis();
                   break;
               }
               default:
