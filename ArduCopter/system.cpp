@@ -285,6 +285,12 @@ void Copter::init_ardupilot()
 
     ext_nav.init(serial_manager);
 
+    ServoRelayEvents.do_set_servo(10,1500);
+    ServoRelayEvents.do_set_servo(11,1514);
+    gcs().send_text(MAV_SEVERITY_INFO, "Should have set gimbal signals");
+
+
+
     // flag that initialisation has completed
     ap.initialised = true;
 }
