@@ -66,9 +66,18 @@ private:
     uint8_t extNavCalled;
     uint32_t _msLastPosRec = 0;
     uint32_t _msLastCtrlRec = 0;
+
     Vector3f _extNavPos;
+    Vector3f _extNavAng;
     Vector3f _extNavVel;
+
+    Vector3f _extNavRate;
+    Vector3f _extNavAcc;
+
     Vector3f _latestGyroMeasurements;
+
+    bool verifyPV(const mavlink_ext_nav_posvelatt_t &packet);
+    bool verifyRA(const mavlink_ext_nav_ctrl_t &packet);
 
     bool _hasReceivedPos = false;
     bool _hasReceivedCtrl = false;

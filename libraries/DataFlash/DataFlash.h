@@ -114,6 +114,10 @@ public:
     void Log_Write_RCOUT(void);
     void Log_Write_RSSI(AP_RSSI &rssi);
     void Log_Write_Baro(uint64_t time_us=0);
+
+    void Log_Write_EXRA(const uint64_t time_us, const Vector3f &gyro, const Vector3f &accel, const bool &inUse);
+    void Log_Write_EXPV(const uint64_t time_us, const Vector3f &pos, const Vector3f &vel, const Vector3f &att,const bool &inUse );
+
     void Log_Write_Power(void);
     void Log_Write_AHRS2(AP_AHRS &ahrs);
     void Log_Write_POS(AP_AHRS &ahrs);
@@ -294,6 +298,8 @@ private:
 #endif
 
     void Log_Write_Baro_instance(uint64_t time_us, uint8_t baro_instance, enum LogMessages type);
+    void Log_Write_EXRA_instance(const uint64_t time_us, const Vector3f &gyro, const Vector3f &accel, const bool &inUse);
+    void Log_Write_EXPV_instance(const uint64_t time_us, const Vector3f &pos, const Vector3f &vel, const Vector3f &att, const bool &inUse);
     void Log_Write_IMU_instance(uint64_t time_us,
                                 uint8_t imu_instance,
                                 enum LogMessages type);

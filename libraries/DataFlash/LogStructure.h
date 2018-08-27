@@ -175,6 +175,33 @@ struct PACKED log_GPS {
     uint8_t  used;
 };
 
+struct PACKED log_EXPV {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float xPos;
+    float yPos;
+    float zPos;
+    float xAng;
+    float yAng;
+    float zAng;
+    float xVel;
+    float yVel;
+    float zVel;
+    bool used;
+};
+
+struct PACKED log_EXRA {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float xRate;
+    float yRate;
+    float zRate;
+    float xAcc;
+    float yAcc;
+    float zAcc;
+    bool used;
+};
+
 struct PACKED log_GPA {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -1406,7 +1433,11 @@ Format characters in the format string for binary log messages
     { LOG_RALLY_MSG, sizeof(log_Rally), \
       "RALY", "QBBLLh", "TimeUS,Tot,Seq,Lat,Lng,Alt", "s--DUm", "F--GGB" },  \
     { LOG_VISUALODOM_MSG, sizeof(log_VisualOdom), \
-      "VISO", "Qffffffff", "TimeUS,dt,AngDX,AngDY,AngDZ,PosDX,PosDY,PosDZ,conf", "ssrrrmmm-", "FF000000-" }
+      "VISO", "Qffffffff", "TimeUS,dt,AngDX,AngDY,AngDZ,PosDX,PosDY,PosDZ,conf", "ssrrrmmm-", "FF000000-" },    \
+    { LOG_EXPV_MSG, sizeof(log_EXPV), \
+       "EXPV", "Qfffffffff", "TimeUS,PosX,PosY,PosZ,AngX,AngY,AngZ,VelX,VelY,VelZ", "smmmdddnnn", "F000000000" },   \
+    { LOG_EXRA_MSG, sizeof(log_EXRA), \
+       "EXRA", "Qffffff", "TimeUS,xRate,yRate,zRate,xAcc,yAcc,zAcc", "skkkooo" , "F000000" }
 
 
 // #if SBP_HW_LOGGING
@@ -1549,6 +1580,8 @@ enum LogMessages : uint8_t {
     LOG_RATE_MSG,
     LOG_RALLY_MSG,
     LOG_VISUALODOM_MSG,
+    LOG_EXPV_MSG,
+    LOG_EXRA_MSG,
     LOG_AOA_SSA_MSG,
     LOG_BEACON_MSG,
     LOG_PROXIMITY_MSG,

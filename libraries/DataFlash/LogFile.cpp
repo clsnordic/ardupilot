@@ -291,6 +291,59 @@ void DataFlash_Class::Log_Write_Baro(uint64_t time_us)
     if (baro.num_instances() > 2 && baro.healthy(2)) {
         Log_Write_Baro_instance(time_us, 2, LOG_BAR3_MSG);
     }
+
+}
+
+void DataFlash_Class::Log_Write_EXPV(const uint64_t time_us, const Vector3f &pos, const Vector3f &vel, const Vector3f &att, const bool &inUse)
+{
+
+    Log_Write_EXPV_instance(time_us, pos,vel, att, inUse);
+
+
+}
+
+void DataFlash_Class::Log_Write_EXPV_instance(const uint64_t time_us, const Vector3f &pos, const Vector3f &vel, const Vector3f &att, const bool &inUse)
+{
+
+    struct log_EXPV pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_EXPV_MSG),
+        time_us : time_us,
+        xPos  : pos.x,
+        yPos  : pos.y,
+        zPos  : pos.z,
+        xAng : att.x,
+        yAng : att.y,
+        zAng : att.z,
+        xVel : vel.x,
+        yVel : vel.y,
+        zVel : vel.z,
+        used : inUse,
+    };
+    WriteBlock(&pkt, sizeof(pkt));
+}
+void DataFlash_Class::Log_Write_EXRA(const uint64_t time_us, const Vector3f &gyro, const Vector3f &accel, const bool &inUse)
+{
+
+    Log_Write_EXRA_instance(time_us, gyro, accel, inUse);
+
+
+}
+
+void DataFlash_Class::Log_Write_EXRA_instance(const uint64_t time_us, const Vector3f &gyro, const Vector3f &accel, const bool &inUse)
+{
+
+    struct log_EXRA pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_EXRA_MSG),
+        time_us : time_us,
+        xRate  : gyro.x,
+        yRate  : gyro.y,
+        zRate  : gyro.z,
+        xAcc : accel.x,
+        yAcc : accel.y,
+        zAcc : accel.z,
+        used : inUse,
+    };
+    WriteBlock(&pkt, sizeof(pkt));
 }
 
 void DataFlash_Class::Log_Write_IMU_instance(const uint64_t time_us, const uint8_t imu_instance, const enum LogMessages type)
