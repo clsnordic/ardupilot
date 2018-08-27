@@ -1435,9 +1435,9 @@ Format characters in the format string for binary log messages
     { LOG_VISUALODOM_MSG, sizeof(log_VisualOdom), \
       "VISO", "Qffffffff", "TimeUS,dt,AngDX,AngDY,AngDZ,PosDX,PosDY,PosDZ,conf", "ssrrrmmm-", "FF000000-" },    \
     { LOG_EXPV_MSG, sizeof(log_EXPV), \
-       "EXPV", "Qfffffffff", "TimeUS,PosX,PosY,PosZ,AngX,AngY,AngZ,VelX,VelY,VelZ", "smmmdddnnn", "F000000000" },   \
+       "EXPV", "QfffffffffB", "TimeUS,PosX,PosY,PosZ,AngX,AngY,AngZ,VelX,VelY,VelZ,used", "smmmdddnnn-", "F000000000-" },   \
     { LOG_EXRA_MSG, sizeof(log_EXRA), \
-       "EXRA", "Qffffff", "TimeUS,xRate,yRate,zRate,xAcc,yAcc,zAcc", "skkkooo" , "F000000" }
+       "EXRA", "QffffffB", "TimeUS,xRate,yRate,zRate,xAcc,yAcc,zAcc,used", "skkkooo-" , "F000000-" }
 
 
 // #if SBP_HW_LOGGING
