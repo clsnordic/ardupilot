@@ -89,8 +89,9 @@ protected:
 
     // get maximum value throttle can be raised to based on throttle vs attitude prioritisation
     float get_throttle_avg_max(float throttle_in);
-    AC_Ext_Nav& _extNav;
+
     AP_MotorsMulticopter& _motors_multi;
+    AC_Ext_Nav& _extNav;
     AC_PID                _pid_rate_roll;
     AC_PID                _pid_rate_pitch;
     AC_PID                _pid_rate_yaw;
