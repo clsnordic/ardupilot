@@ -10,6 +10,7 @@ const extern AP_HAL::HAL& hal;
 AP_InertialSensor_SITL::AP_InertialSensor_SITL(AP_InertialSensor &imu) :
     AP_InertialSensor_Backend(imu)
 {
+
 }
 
 /*
@@ -30,6 +31,7 @@ AP_InertialSensor_Backend *AP_InertialSensor_SITL::detect(AP_InertialSensor &_im
 
 bool AP_InertialSensor_SITL::init_sensor(void)
 {
+
     sitl = AP::sitl();
     if (sitl == nullptr) {
         return false;
@@ -46,12 +48,14 @@ bool AP_InertialSensor_SITL::init_sensor(void)
 
     hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&AP_InertialSensor_SITL::timer_update, void));
 
+
     return true;
 }
 
 /*
   generate an accelerometer sample
  */
+
 void AP_InertialSensor_SITL::generate_accel(uint8_t instance)
 {
     // minimum noise levels are 2 bits, but averaged over many
@@ -134,6 +138,15 @@ void AP_InertialSensor_SITL::generate_gyro(uint8_t instance)
     _rotate_and_correct_gyro(gyro_instance[instance], gyro);
     
     _notify_new_gyro_raw_sample(gyro_instance[instance], gyro, AP_HAL::micros64());
+
+    //If theres been 10 ms since last call send again
+    if (AP_HAL::millis() - lastSitlGyro >= 10)
+    {
+        AC_Ext_Nav extNav = AC::extNav();
+        extNav.setSitlGyro(gyro);
+        lastSitlGyro = AP_HAL::millis();
+    }
+
 }
 
 void AP_InertialSensor_SITL::timer_update(void)

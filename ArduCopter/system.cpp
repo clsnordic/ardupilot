@@ -285,6 +285,8 @@ void Copter::init_ardupilot()
 
     ext_nav.init(serial_manager);
 
+
+//Forcing pwm output to enable gimbal motors
     ServoRelayEvents.do_set_servo(10,1500);
     ServoRelayEvents.do_set_servo(11,1514);
     gcs().send_text(MAV_SEVERITY_INFO, "Should have set gimbal signals");

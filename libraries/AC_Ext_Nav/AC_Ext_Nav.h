@@ -14,7 +14,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
 
-
+extern const AP_HAL::HAL& hal;
 class AC_Ext_Nav {
 public:
     AC_Ext_Nav();
@@ -54,7 +54,15 @@ public:
     inline float getYaw() {
         return _currYaw;
     }
+    #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    void setSitlGyro(Vector3f &gyro);
+    #endif
+
+    void handleMsg(mavlink_message_t *msg);
+    void storeData(mavlink_message_t *msg);
     //AP_Int8 _extNavPosEnabled;
+
+    static AC_Ext_Nav *get_instance();
 
 
 //extern const AP_HAL::HAL& hal;
@@ -76,6 +84,8 @@ private:
 
     Vector3f _latestGyroMeasurements;
 
+    static AC_Ext_Nav *_s_instance;
+
     bool verifyPV(const mavlink_ext_nav_posvelatt_t &packet);
     bool verifyRA(const mavlink_ext_nav_ctrl_t &packet);
 
@@ -92,3 +102,7 @@ private:
 };
 
 #endif /* AC_EXT_NAV_H_ */
+
+namespace AC {
+    AC_Ext_Nav &extNav();
+};

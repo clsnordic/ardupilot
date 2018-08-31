@@ -1,9 +1,13 @@
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 #pragma once
 
 #include <SITL/SITL.h>
 
+
+
 #include "AP_InertialSensor.h"
 #include "AP_InertialSensor_Backend.h"
+
 
 #define INS_SITL_INSTANCES 2
 
@@ -18,6 +22,10 @@ public:
     // detect the sensor
     static AP_InertialSensor_Backend *detect(AP_InertialSensor &imu);
 
+
+
+
+
 private:
     bool init_sensor(void);
     void timer_update();
@@ -26,6 +34,16 @@ private:
     void generate_gyro(uint8_t instance);
 
     SITL::SITL *sitl;
+
+
+
+
+
+
+
+
+    uint32_t lastSitlGyro;
+
 
     // simulated sensor rates in Hz. This matches a pixhawk1
     const uint16_t gyro_sample_hz[INS_SITL_INSTANCES]  { 1000, 760 };
