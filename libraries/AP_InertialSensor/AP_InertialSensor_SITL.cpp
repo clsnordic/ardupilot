@@ -10,7 +10,7 @@ const extern AP_HAL::HAL& hal;
 AP_InertialSensor_SITL::AP_InertialSensor_SITL(AP_InertialSensor &imu) :
     AP_InertialSensor_Backend(imu)
 {
-
+    AC_Ext_Nav extNav = AC::extNav();
 }
 
 /*
@@ -142,7 +142,7 @@ void AP_InertialSensor_SITL::generate_gyro(uint8_t instance)
     //If theres been 10 ms since last call send again
     if (AP_HAL::millis() - lastSitlGyro >= 10)
     {
-        AC_Ext_Nav extNav = AC::extNav();
+
         extNav.setSitlGyro(gyro);
         lastSitlGyro = AP_HAL::millis();
     }

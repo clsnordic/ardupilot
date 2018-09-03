@@ -33,6 +33,8 @@ AC_Ext_Nav::AC_Ext_Nav() {
     // TODO Auto-generated constructor stub
     AP_Param::setup_object_defaults(this, var_info);
 
+    _s_instance = this;
+
 }
 
 void AC_Ext_Nav::update() {
