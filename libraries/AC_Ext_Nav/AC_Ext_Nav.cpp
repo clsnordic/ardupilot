@@ -27,13 +27,13 @@ const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
 
         AP_GROUPEND
 };
-AC_Ext_Nav *AC_Ext_Nav::_s_instance = nullptr;
+
 
 AC_Ext_Nav::AC_Ext_Nav() {
     // TODO Auto-generated constructor stub
     AP_Param::setup_object_defaults(this, var_info);
 
-    _s_instance = this;
+    //_s_instance = this;
 
 }
 
@@ -54,7 +54,7 @@ void AC_Ext_Nav::update() {
            if (mavlink_parse_char(0, c, &msg, &status))
            {
                handleMsg(&msg);
-               hal.console->printf("Triggered\n");
+               //hal.console->printf("Triggered\n");
            }
 
        }
@@ -83,6 +83,7 @@ void AC_Ext_Nav::init(const AP_SerialManager &serial_manager) {
 }
 AC_Ext_Nav::~AC_Ext_Nav() {
     // TODO Auto-generated destructor stub
+    //delete _s_instance;
 }
 
 
@@ -164,8 +165,11 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
           _msLastCtrlRec = AP_HAL::millis();
           //hal.console->printf("time: %lu\n",AP_HAL::micros64());
           DataFlash_Class::instance()->Log_Write_EXRA(AP_HAL::micros64(), _latestGyroMeasurements, _extNavAcc, extNavCtrlEnabled());
-
-
+          /*if(extNavCalled==200)
+          {
+          hal.console->printf("extNavCtrlEnabled(): %d,_hasReceivedCtrl: %d,_extNavCtrlEnabled: %d\n",(int)extNavCtrlEnabled(),(int)_hasReceivedCtrl,(int)_extNavCtrlEnabled);
+          extNavCalled = 0;
+          } else ++extNavCalled; */
           break;
       }
       default:
@@ -174,13 +178,10 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
   }
 }
 
-AC_Ext_Nav *AC_Ext_Nav::get_instance()
+/*static AC_Ext_Nav &AC_Ext_Nav::get_instance()
 {
-    if (!_s_instance) {
-        _s_instance = new AC_Ext_Nav();
-    }
     return _s_instance;
-}
+} */
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 void AC_Ext_Nav::setSitlGyro(Vector3f &gyro) {
     //Generate a mavlink message and 'force it' to the correct one
@@ -200,11 +201,4 @@ void AC_Ext_Nav::setSitlGyro(Vector3f &gyro) {
    handleMsg(&msg);
 }
 #endif
-namespace AC {
 
-AC_Ext_Nav &extNav()
-{
-    return *AC_Ext_Nav::get_instance();
-}
-
-};

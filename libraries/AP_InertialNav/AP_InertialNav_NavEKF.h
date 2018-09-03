@@ -12,11 +12,11 @@ class AP_InertialNav_NavEKF : public AP_InertialNav
 {
 public:
     // Constructor
-    AP_InertialNav_NavEKF(AP_AHRS_NavEKF &ahrs, AC_Ext_Nav& extNav) :
+    AP_InertialNav_NavEKF(AP_AHRS_NavEKF &ahrs) :
         AP_InertialNav(),
         _haveabspos(false),
         _ahrs_ekf(ahrs),
-        _extNav(extNav)
+        _extNav(AC_Ext_Nav::get_instance())
         {}
 
     /**

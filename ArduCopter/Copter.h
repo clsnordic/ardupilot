@@ -528,7 +528,9 @@ private:
     AC_Avoid avoid{ahrs, fence, g2.proximity};
 # endif
 #endif
-    AC_Ext_Nav ext_nav;
+    AC_Ext_Nav &ext_nav = AC_Ext_Nav::get_instance();
+
+    //AC_Ext_Nav *extNav2 = AC::extNav();
     // Rally library
 #if AC_RALLY == ENABLED
     AP_Rally_Copter rally{ahrs};

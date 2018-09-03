@@ -17,8 +17,10 @@
 extern const AP_HAL::HAL& hal;
 class AC_Ext_Nav {
 public:
-    AC_Ext_Nav();
+
     virtual ~AC_Ext_Nav();
+    AC_Ext_Nav( const AC_Ext_Nav&) = delete;
+    AC_Ext_Nav operator=(const AC_Ext_Nav&) = delete;
 
     void update();
 
@@ -62,12 +64,21 @@ public:
     void storeData(mavlink_message_t *msg);
     //AP_Int8 _extNavPosEnabled;
 
-    static AC_Ext_Nav *get_instance();
+    static AC_Ext_Nav& get_instance() {
+             static AC_Ext_Nav instance;
+             return instance;
+         }
 
 
 //extern const AP_HAL::HAL& hal;
 
 private:
+
+    AC_Ext_Nav();
+
+    //AC_Ext_Nav(const AC_Ext_Nav&) = delete;
+    //AC_Ext_Nav& operator=(const AC_Ext_Nav&) = delete;
+
     AP_HAL::UARTDriver *_port;                  // UART used to send data to external
     AP_SerialManager::SerialProtocol _protocol; // protocol used - detected using SerialManager's SERIAL#_PROTOCOL parameter
 
@@ -84,7 +95,7 @@ private:
 
     Vector3f _latestGyroMeasurements;
 
-    static AC_Ext_Nav *_s_instance;
+    static AC_Ext_Nav _s_instance;
 
     bool verifyPV(const mavlink_ext_nav_posvelatt_t &packet);
     bool verifyRA(const mavlink_ext_nav_ctrl_t &packet);
@@ -102,7 +113,3 @@ private:
 };
 
 #endif /* AC_EXT_NAV_H_ */
-
-namespace AC {
-    AC_Ext_Nav &extNav();
-};

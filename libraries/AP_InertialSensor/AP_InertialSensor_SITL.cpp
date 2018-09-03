@@ -8,9 +8,10 @@
 const extern AP_HAL::HAL& hal;
 
 AP_InertialSensor_SITL::AP_InertialSensor_SITL(AP_InertialSensor &imu) :
-    AP_InertialSensor_Backend(imu)
+    AP_InertialSensor_Backend(imu),
+    _extNav(AC_Ext_Nav::get_instance())
 {
-    AC_Ext_Nav extNav = AC::extNav();
+    //_extNav = AC_Ext_Nav::get_instance();
 }
 
 /*
@@ -143,7 +144,7 @@ void AP_InertialSensor_SITL::generate_gyro(uint8_t instance)
     if (AP_HAL::millis() - lastSitlGyro >= 10)
     {
 
-        extNav.setSitlGyro(gyro);
+        _extNav.setSitlGyro(gyro);
         lastSitlGyro = AP_HAL::millis();
     }
 

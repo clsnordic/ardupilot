@@ -1,6 +1,6 @@
-#include <AC_Ext_Nav/AC_Ext_Nav.h>
-#pragma once
 
+#pragma once
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 #include <SITL/SITL.h>
 
 
@@ -35,7 +35,7 @@ private:
 
     SITL::SITL *sitl;
 
-
+    AC_Ext_Nav &_extNav;
 
 
 

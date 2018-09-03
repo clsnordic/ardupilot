@@ -77,6 +77,7 @@
 
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(Copter, &copter, func, rate_hz, max_time_micros)
 
+
 /*
   scheduler table for fast CPUs - all regular tasks apart from the fast_loop()
   should be listed here, along with how often they should be called (in hz)
@@ -141,7 +142,8 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK_CLASS(AP_Mount,             &copter.camera_mount,        update,          50,  75),
 #endif
     //Receiver external navigation data
-    SCHED_TASK_CLASS(AC_Ext_Nav, &copter.ext_nav, update, 100 , 100),
+    //SCHED_TASK_CLASS(AC_Ext_Nav, &copter.ext_nav, update, 1 , 100),
+    //SCHED_TASK_CLASS(AC_Ext_Nav, &copter.extNav2, update, 1 , 100),
 #if CAMERA == ENABLED
     SCHED_TASK_CLASS(AP_Camera,            &copter.camera,              update_trigger,  50,  75),
 #endif
@@ -226,7 +228,7 @@ void Copter::loop()
 // Main loop - 400hz
 void Copter::fast_loop()
 {
-
+    ext_nav.update();
     // update INS immediately to get current gyro data populated
     ins.update();
 

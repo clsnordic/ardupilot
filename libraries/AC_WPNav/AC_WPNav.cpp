@@ -74,12 +74,12 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
 // Note that the Vector/Matrix constructors already implicitly zero
 // their values.
 //
-AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control, const AC_Ext_Nav& extNav) :
+AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosControl& pos_control, const AC_AttitudeControl& attitude_control) :
     _inav(inav),
     _ahrs(ahrs),
     _pos_control(pos_control),
     _attitude_control(attitude_control),
-    _extNav(extNav)
+    _extNav(AC_Ext_Nav::get_instance())
 {
     AP_Param::setup_object_defaults(this, var_info);
 
@@ -205,6 +205,7 @@ bool AC_WPNav::set_wp_destination(const Vector3f& destination, bool terrain_alt)
 {
 	Vector3f origin;
 
+	//TODO change to current position
     // if waypoint controller is active use the existing position target as the origin
     if ((AP_HAL::millis() - _wp_last_update) < 1000) {
         origin = _pos_control.get_pos_target();

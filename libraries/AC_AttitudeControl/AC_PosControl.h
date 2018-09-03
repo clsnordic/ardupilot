@@ -380,7 +380,7 @@ protected:
     AC_P        _p_pos_xy;
     AC_PID_2D   _pid_vel_xy;
 
-    AC_Ext_Nav       _extNav;
+    //AC_Ext_Nav       _extNav;
 
     // internal variables
     float       _dt;                    // time difference (in seconds) between calls from the main program

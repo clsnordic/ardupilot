@@ -581,7 +581,7 @@ void Copter::allocate_motors(void)
     const struct AP_Param::GroupInfo *ac_var_info;
 
 #if FRAME_CONFIG != HELI_FRAME
-    attitude_control = new AC_AttitudeControl_Multi(*ahrs_view, aparm, *motors, scheduler.get_loop_period_s(), ext_nav);
+    attitude_control = new AC_AttitudeControl_Multi(*ahrs_view, aparm, *motors, scheduler.get_loop_period_s());
     ac_var_info = AC_AttitudeControl_Multi::var_info;
 #else
     attitude_control = new AC_AttitudeControl_Heli(*ahrs_view, aparm, *motors, scheduler.get_loop_period_s());
@@ -598,7 +598,7 @@ void Copter::allocate_motors(void)
     }
     AP_Param::load_object_from_eeprom(pos_control, pos_control->var_info);
 
-    wp_nav = new AC_WPNav(inertial_nav, *ahrs_view, *pos_control, *attitude_control, ext_nav);
+    wp_nav = new AC_WPNav(inertial_nav, *ahrs_view, *pos_control, *attitude_control);
     if (wp_nav == nullptr) {
         AP_HAL::panic("Unable to allocate WPNav");
     }
