@@ -8,6 +8,7 @@
 #include "AC_Ext_Nav.h"
 extern const AP_HAL::HAL& hal;
 
+#define CDTORAD 5729.577951308232f
 
 const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
         // @Param: POS
@@ -166,7 +167,7 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 }
 void AC_Ext_Nav::storeAngRates(mavlink_ext_nav_ctrl_t &packet, Vector3f &gyroMeas)
 {
-    gyroMeas.x = packet.rollrate / DEGX100;
+    gyroMeas.x = packet.rollrate / CDTORAD;
     gyroMeas.y = packet.pitchrate / DEGX100;
     gyroMeas.z = -packet.yawrate / DEGX100;
 
@@ -199,6 +200,27 @@ void AC_Ext_Nav::setExtCtrl(Vector3f &gyro, Vector3f& accel) {
                               accel.x*100,
                               accel.y*100,
                               accel.z*-100);
+   handleMsg(&msg);
+}
+void AC_Ext_Nav::setExtPosVelAtt(Vector3f &pos, Vector3f& vel, Vector3f& ang) {
+    //Generate a mavlink message and 'force it' to the correct one
+    //TODO get this to go over serial link later
+    mavlink_message_t msg;
+
+
+    mavlink_msg_ext_nav_posvelatt_pack(255,
+                              200,
+                              &msg,
+                              AP_HAL::micros64(),
+                              pos.y, // East Pos (cm)
+                              pos.x, // North pos (cm)
+                              pos.z, // Up pos (cm)
+                              vel.y,                      // East velocity (cm/s)
+                              vel.x,                      // North velocity (cm/s)
+                              vel.z,                      // Up velocity (cm/s)
+                              ang.x*100,                      // Roll (centi-degree)
+                              ang.y*100,                      // Pitch (centi-degree)
+                              ang.z*100);                      // Yaw (centi-degree)
    handleMsg(&msg);
 }
 #endif

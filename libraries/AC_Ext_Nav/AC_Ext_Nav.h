@@ -31,6 +31,7 @@ public:
     //      .y = Position in East (cm)
     //      .z = Position in Up (cm)
     inline Vector3f get_position()  {
+
         return _latestPosition;
     }
     //_latestVelocity
@@ -63,6 +64,7 @@ public:
     }
     #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     void setExtCtrl(Vector3f &gyro, Vector3f& accel);
+    void setExtPosVelAtt(Vector3f &pos, Vector3f& vel, Vector3f& ang);
     #endif
 
     void handleMsg(mavlink_message_t *msg);
@@ -98,25 +100,25 @@ private:
     //      .x = Roll angle (rad)
     //      .y = Pitch angle (rad)
     //      .z = Yaw angle (rad)
-    Vector3f _latestAngleMeasurement;
+    Vector3f _latestAngleMeasurement = Vector3f(0,0,0);;
     //_latestPosition
     //      .x = Position in North (cm)
     //      .y = Position in East (cm)
     //      .z = Position in Up (cm)
-    Vector3f _latestPosition;
+    Vector3f _latestPosition = Vector3f(0,0,0);;
 
     //_latestVelocity
     //      .x = Velocity in North (cm/s)
     //      .y = Velocity in East (cm/s)
     //      .z = Velocity in Up (cm/s)
-    Vector3f _latestVelocity;
+    Vector3f _latestVelocity = Vector3f(0,0,0);;
 
-    Vector3f _latestAccelerations;
+    Vector3f _latestAccelerations = Vector3f(0,0,0);;
     //_latestGyroMeasurements
     //      .x = Angular velocity roll axis (rad/s)
     //      .y = Angular velocity pitch axis (rad/s)
     //      .z = Angular velocity yaw axis (rad/s)
-    Vector3f _latestGyroMeasurements;
+    Vector3f _latestGyroMeasurements = Vector3f(0,0,0);;
 
     static AC_Ext_Nav _s_instance;
 

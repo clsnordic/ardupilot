@@ -36,16 +36,13 @@ private:
     Vector3f _latestGyro;
     Vector3f _latestAccel;
 
+
+
     SITL::SITL *sitl;
 
     AC_Ext_Nav &_extNav;
 
-
-
-
-
-
-    uint32_t lastSitlGyro;
+    uint64_t lastSitlGyro;
 
 
     // simulated sensor rates in Hz. This matches a pixhawk1

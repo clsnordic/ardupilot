@@ -48,6 +48,22 @@ void AP_InertialNav_NavEKF::update(float dt)
     _extNavPos = _extNav.get_position();
     _extNavVel = _extNav.get_velocity();
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
+
+    if (AP_HAL::millis64() - lastPosVelAtt >= 10)
+    {
+        sitl = AP::sitl();
+        Vector3f rpy;
+        rpy.x = sitl->state.rollDeg;
+        rpy.y = sitl->state.pitchDeg;
+        rpy.z = sitl->state.yawDeg;
+        _extNav.setExtPosVelAtt(_relpos_cm,_velocity_cm, rpy);
+
+        lastPosVelAtt = AP_HAL::millis64();
+    }
+#endif
+
 }
 
 /**
@@ -83,7 +99,6 @@ const Vector3f &AP_InertialNav_NavEKF::get_position(void) const
     if (_extNav.extNavPosEnabled() == 1)
     {
         return _extNavPos;
-
     }
     return _relpos_cm;
 

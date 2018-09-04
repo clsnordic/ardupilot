@@ -196,10 +196,13 @@ bool AP_InertialSensor_SITL::update(void)
         update_gyro(gyro_instance[i]);
     }
     //If theres been 10 ms since last call send again
-    if (AP_HAL::millis() - lastSitlGyro >= 10)
+    if (AP_HAL::millis64() - lastSitlGyro >= 10)
     {
+
+
         _extNav.setExtCtrl(_latestGyro,_latestAccel);
-        lastSitlGyro = AP_HAL::millis();
+
+        lastSitlGyro = AP_HAL::millis64();
     }
     return true;
 }

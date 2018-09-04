@@ -7,6 +7,9 @@
 
 #include <AP_NavEKF/AP_Nav_Common.h>              // definitions shared by inertial and ekf nav filters
 #include <AC_Ext_Nav/AC_Ext_Nav.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#include <SITL/SITL.h>
+#endif
 
 class AP_InertialNav_NavEKF : public AP_InertialNav
 {
@@ -103,11 +106,21 @@ private:
 
 
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+        //ENU
+        Vector3f _latestPos;
+        Vector3f _latestVel;
+        //Roll pitch yaw
+        Vector3f _latestAng;
+        uint64_t lastPosVelAtt;
 
-    Vector3f _extNavPos;
-    Vector3f _extNavVel;
+
+        SITL::SITL *sitl;
+#endif
+
+    Vector3f _extNavPos = Vector3f(0,0,0);
+    Vector3f _extNavVel = Vector3f(0,0,0);
     uint32_t printCall;
-
     Vector3f _relpos_cm;   // NEU
     Vector3f _velocity_cm; // NEU
     float _pos_z_rate;
