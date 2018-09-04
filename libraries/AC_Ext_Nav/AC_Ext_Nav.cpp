@@ -60,6 +60,8 @@ void AC_Ext_Nav::update() {
        }
 
     }
+    if (AP_HAL::millis() - _msLastPosRec > 40) _hasReceivedPos = false;
+    if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = false;
 }
 
 void AC_Ext_Nav::init(const AP_SerialManager &serial_manager) {
@@ -100,21 +102,12 @@ bool AC_Ext_Nav::verifyRA(const mavlink_ext_nav_ctrl_t &packet)
 }
 void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 {
-    //hal.console->printf("Handling the message!");
-
-    if (AP_HAL::millis() - _msLastPosRec > 40)
-        {
-        //hal.console->printf("Triggered lastPosRec");
-            _hasReceivedPos = false;
-        }
-    if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = false;
-
      switch(msg->msgid)
       {
 
      case MAVLINK_MSG_ID_HEARTBEAT:
     {
-        hal.console->printf("Looking for heartbeat...");
+        //hal.console->printf("Looking for heartbeat...");
         break;
     }
 
@@ -126,22 +119,22 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 
          if(!verifyPV(packet)) break;
          _currYaw = packet.Yaw;
-         _extNavPos.x = packet.xPos;
-         _extNavPos.y = packet.yPos;
-         _extNavPos.z = packet.zPos;
-         _extNavAng.x = packet.Roll;
-         _extNavAng.y = packet.Pitch;
-         _extNavAng.z = packet.Yaw;
-         _extNavVel.x = packet.xVel;
-         _extNavVel.y = packet.yVel;
-         _extNavVel.z = packet.zVel;
+         _latestPosition.x = packet.yPos;
+         _latestPosition.y = packet.xPos;
+         _latestPosition.z = packet.zPos;
+         _latestAngleMeasurement.x = packet.Roll;
+         _latestAngleMeasurement.y = packet.Pitch;
+         _latestAngleMeasurement.z = packet.Yaw;
+         _latestVelocity.x = packet.yVel;
+         _latestVelocity.y = packet.xVel;
+         _latestVelocity.z = packet.zVel;
 
          _hasReceivedPos = true;
          _msLastPosRec = AP_HAL::millis();
 
          //Now log the data and the time received
 
-         DataFlash_Class::instance()->Log_Write_EXPV(AP_HAL::micros64(), _extNavPos, _extNavAng, _extNavVel, extNavPosEnabled());
+         DataFlash_Class::instance()->Log_Write_EXPV(AP_HAL::micros64(), _latestPosition, _latestAngleMeasurement, _latestVelocity, extNavPosEnabled());
          break;
       }
       case MAVLINK_MSG_ID_EXT_NAV_CTRL:
@@ -150,21 +143,15 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
           mavlink_ext_nav_ctrl_t packet;
           mavlink_msg_ext_nav_ctrl_decode(msg, &packet);
           if(!verifyRA(packet)) break;
-          _latestGyroMeasurements.x = packet.rollrate;
-          _latestGyroMeasurements.y = packet.pitchrate;
-          _latestGyroMeasurements.z = packet.yawrate;
 
-
-
-          _extNavAcc.x = packet.xacc;
-          _extNavAcc.y = packet.yacc;
-          _extNavAcc.z = packet.zacc;
+          storeAngRates(packet, _latestGyroMeasurements);
+          storeAccel(packet, _latestAccelerations);
 
           _hasReceivedCtrl = true;
 
           _msLastCtrlRec = AP_HAL::millis();
           //hal.console->printf("time: %lu\n",AP_HAL::micros64());
-          DataFlash_Class::instance()->Log_Write_EXRA(AP_HAL::micros64(), _latestGyroMeasurements, _extNavAcc, extNavCtrlEnabled());
+          DataFlash_Class::instance()->Log_Write_EXRA(AP_HAL::micros64(), _latestGyroMeasurements, _latestAccelerations, extNavCtrlEnabled());
           /*if(extNavCalled==200)
           {
           hal.console->printf("extNavCtrlEnabled(): %d,_hasReceivedCtrl: %d,_extNavCtrlEnabled: %d\n",(int)extNavCtrlEnabled(),(int)_hasReceivedCtrl,(int)_extNavCtrlEnabled);
@@ -177,27 +164,41 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 
   }
 }
-
-/*static AC_Ext_Nav &AC_Ext_Nav::get_instance()
+void AC_Ext_Nav::storeAngRates(mavlink_ext_nav_ctrl_t &packet, Vector3f &gyroMeas)
 {
-    return _s_instance;
-} */
+    gyroMeas.x = packet.rollrate / DEGX100;
+    gyroMeas.y = packet.pitchrate / DEGX100;
+    gyroMeas.z = -packet.yawrate / DEGX100;
+
+}
+void AC_Ext_Nav::storeAccel(mavlink_ext_nav_ctrl_t &packet, Vector3f &accel)
+{
+    accel.x = packet.xacc * 100;
+    accel.y = packet.yacc * 100;
+    accel.z = -packet.zacc * 100;
+
+}
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-void AC_Ext_Nav::setSitlGyro(Vector3f &gyro) {
+void AC_Ext_Nav::setExtCtrl(Vector3f &gyro, Vector3f& accel) {
     //Generate a mavlink message and 'force it' to the correct one
     //TODO get this to go over serial link later
     mavlink_message_t msg;
+
+    //convert the gyro data to centi-degrees / s
+
+
 
     mavlink_msg_ext_nav_ctrl_pack(255,
                               200,
                               &msg,
                               AP_HAL::micros64(),
-                              gyro.x,
-                              gyro.y,
-                              gyro.z,
-                              2,
-                              2,
-                              2);
+                              RadiansToCentiDegrees(gyro.x),
+                              RadiansToCentiDegrees(gyro.y),
+                              RadiansToCentiDegrees(gyro.z)*-1,
+                              accel.x*100,
+                              accel.y*100,
+                              accel.z*-100);
    handleMsg(&msg);
 }
 #endif

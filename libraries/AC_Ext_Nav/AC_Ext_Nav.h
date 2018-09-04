@@ -25,15 +25,20 @@ public:
     void update();
 
     void init(const AP_SerialManager &serial_manager);
-    inline Vector3f get_position()  {
-        return _extNavPos;
-    }
-    inline Vector3f get_position2()  {
 
-        return _extNavPos;
-        }
-    inline Vector3f get_velocity()  {
-        return _extNavVel;
+    //_latestPosition
+    //      .x = Position in North (cm)
+    //      .y = Position in East (cm)
+    //      .z = Position in Up (cm)
+    inline Vector3f get_position()  {
+        return _latestPosition;
+    }
+    //_latestVelocity
+    //      .x = Velocity in North (cm/s)
+    //      .y = Velocity in East (cm/s)
+    //      .z = Velocity in Up (cm/s)
+    const inline Vector3f get_velocity()  {
+        return _latestVelocity;
     }
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -57,7 +62,7 @@ public:
         return _currYaw;
     }
     #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    void setSitlGyro(Vector3f &gyro);
+    void setExtCtrl(Vector3f &gyro, Vector3f& accel);
     #endif
 
     void handleMsg(mavlink_message_t *msg);
@@ -86,13 +91,31 @@ private:
     uint32_t _msLastPosRec = 0;
     uint32_t _msLastCtrlRec = 0;
 
-    Vector3f _extNavPos;
-    Vector3f _extNavAng;
-    Vector3f _extNavVel;
 
     Vector3f _extNavRate;
-    Vector3f _extNavAcc;
 
+    //_latestAngleMeasurement
+    //      .x = Roll angle (rad)
+    //      .y = Pitch angle (rad)
+    //      .z = Yaw angle (rad)
+    Vector3f _latestAngleMeasurement;
+    //_latestPosition
+    //      .x = Position in North (cm)
+    //      .y = Position in East (cm)
+    //      .z = Position in Up (cm)
+    Vector3f _latestPosition;
+
+    //_latestVelocity
+    //      .x = Velocity in North (cm/s)
+    //      .y = Velocity in East (cm/s)
+    //      .z = Velocity in Up (cm/s)
+    Vector3f _latestVelocity;
+
+    Vector3f _latestAccelerations;
+    //_latestGyroMeasurements
+    //      .x = Angular velocity roll axis (rad/s)
+    //      .y = Angular velocity pitch axis (rad/s)
+    //      .z = Angular velocity yaw axis (rad/s)
     Vector3f _latestGyroMeasurements;
 
     static AC_Ext_Nav _s_instance;
@@ -108,6 +131,9 @@ private:
     AP_Int8 _extNavPosEnabled;
     AP_Int8 _extNavCtrlEnabled;
     //AP_Int8 _extLowLevelCtrlEnabled;
+
+    void storeAngRates(mavlink_ext_nav_ctrl_t &packet, Vector3f &gyroMeas);
+    void storeAccel(mavlink_ext_nav_ctrl_t &packet, Vector3f &accel);
 
 
 };

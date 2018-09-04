@@ -167,7 +167,7 @@ void NOINLINE Copter::send_nav_controller_output(mavlink_channel_t chan)
         flightmode->wp_bearing() * 1.0e-2f,
         MIN(flightmode->wp_distance() * 1.0e-2f, UINT16_MAX),
         pos_control->get_alt_error() * 1.0e-2f,
-        0,
+        (float)copter.ext_nav.extNavCtrlEnabled(),
         flightmode->crosstrack_error() * 1.0e-2f);
 }
 

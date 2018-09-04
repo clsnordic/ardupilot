@@ -105,6 +105,8 @@ void AP_InertialSensor_SITL::generate_accel(uint8_t instance)
     _rotate_and_correct_accel(accel_instance[instance], accel);
     
     _notify_new_accel_raw_sample(accel_instance[instance], accel, AP_HAL::micros64());
+
+    _latestAccel = accel;
 }
 
 /*
@@ -140,13 +142,8 @@ void AP_InertialSensor_SITL::generate_gyro(uint8_t instance)
     
     _notify_new_gyro_raw_sample(gyro_instance[instance], gyro, AP_HAL::micros64());
 
-    //If theres been 10 ms since last call send again
-    if (AP_HAL::millis() - lastSitlGyro >= 10)
-    {
+    _latestGyro = gyro;
 
-        _extNav.setSitlGyro(gyro);
-        lastSitlGyro = AP_HAL::millis();
-    }
 
 }
 
@@ -197,6 +194,12 @@ bool AP_InertialSensor_SITL::update(void)
     for (uint8_t i=0; i<INS_SITL_INSTANCES; i++) {
         update_accel(accel_instance[i]);
         update_gyro(gyro_instance[i]);
+    }
+    //If theres been 10 ms since last call send again
+    if (AP_HAL::millis() - lastSitlGyro >= 10)
+    {
+        _extNav.setExtCtrl(_latestGyro,_latestAccel);
+        lastSitlGyro = AP_HAL::millis();
     }
     return true;
 }

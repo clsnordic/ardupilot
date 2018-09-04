@@ -66,9 +66,9 @@ public:
      * get_velocity - returns the current velocity in cm/s
      *
      * @return velocity vector:
-     *      		.x : latitude  velocity in cm/s
-     * 				.y : longitude velocity in cm/s
-     * 				.z : vertical  velocity in cm/s
+     *      		.x : North  velocity in cm/s
+     * 				.y : East velocity in cm/s
+     * 				.z : Up  velocity in cm/s
      */
     const Vector3f&    get_velocity() const;
 
@@ -105,7 +105,8 @@ private:
 
 
     Vector3f _extNavPos;
-    uint8_t printCall;
+    Vector3f _extNavVel;
+    uint32_t printCall;
 
     Vector3f _relpos_cm;   // NEU
     Vector3f _velocity_cm; // NEU

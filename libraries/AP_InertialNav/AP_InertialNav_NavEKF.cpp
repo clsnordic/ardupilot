@@ -35,6 +35,8 @@ void AP_InertialNav_NavEKF::update(float dt)
     if (_ahrs_ekf.get_velocity_NED(velNED)) {
         _velocity_cm = velNED * 100; // convert to cm/s
         _velocity_cm.z = -_velocity_cm.z; // convert from NED to NEU
+
+
     }
 
     // Get a derivative of the vertical position which is kinematically consistent with the vertical position is required by some control loops.
@@ -44,14 +46,8 @@ void AP_InertialNav_NavEKF::update(float dt)
         _pos_z_rate = - _pos_z_rate; // InertialNav is NEU
     }
     _extNavPos = _extNav.get_position();
+    _extNavVel = _extNav.get_velocity();
 
-
-    //Print the value every 100th call
-    /*if (printCall == 100)
-    {
-        printCall = 0;
-        hal.console->printf("value of extNavPos: %f, %f, %f", _extNavPos.x,_extNavPos.y, _extNavPos.z);
-    } else printCall++; */
 }
 
 /**
@@ -123,13 +119,13 @@ int32_t AP_InertialNav_NavEKF::get_longitude() const
  * get_velocity - returns the current velocity in cm/s
  *
  * @return velocity vector:
- *      		.x : latitude  velocity in cm/s
- * 				.y : longitude velocity in cm/s
- * 				.z : vertical  velocity in cm/s
+ *      		.x : North  velocity in cm/s
+ * 				.y : East velocity in cm/s
+ * 				.z : Up  velocity in cm/s
  */
 const Vector3f &AP_InertialNav_NavEKF::get_velocity() const
 {
-    //if (_extNav.extNavPosEnabled() == 1) return _extNav.get_velocity();
+    if (_extNav.extNavPosEnabled() == 1) return _extNavVel;
     return _velocity_cm;
 }
 
@@ -140,6 +136,7 @@ const Vector3f &AP_InertialNav_NavEKF::get_velocity() const
  */
 float AP_InertialNav_NavEKF::get_velocity_xy() const
 {
+    if (_extNav.extNavPosEnabled() == 1) return norm(_extNavVel.x, _extNavVel.y);
     return norm(_velocity_cm.x, _velocity_cm.y);
 }
 
@@ -148,6 +145,7 @@ float AP_InertialNav_NavEKF::get_velocity_xy() const
 */
 float AP_InertialNav_NavEKF::get_pos_z_derivative() const
 {
+    if (_extNav.extNavPosEnabled() == 1) return _extNavVel.z;
     return _pos_z_rate;
 }
 
@@ -157,6 +155,7 @@ float AP_InertialNav_NavEKF::get_pos_z_derivative() const
  */
 float AP_InertialNav_NavEKF::get_altitude() const
 {
+    if (_extNav.extNavPosEnabled() == 1) return _extNavPos.z;
     return _relpos_cm.z;
 }
 
@@ -169,7 +168,7 @@ float AP_InertialNav_NavEKF::get_altitude() const
  */
 float AP_InertialNav_NavEKF::get_velocity_z() const
 {
-
+    if (_extNav.extNavPosEnabled() == 1) return _extNavVel.z;
     return _velocity_cm.z;
 }
 

@@ -82,9 +82,9 @@ public:
      * get_velocity - returns the current velocity in cm/s
      *
      * @return velocity vector:
-     *      		.x : latitude  velocity in cm/s
-     * 				.y : longitude velocity in cm/s
-     * 				.z : vertical  velocity in cm/s
+     *      		.x : North  velocity in cm/s
+     * 				.y : East velocity in cm/s
+     * 				.z : Up  velocity in cm/s
      */
     virtual const Vector3f&    get_velocity() const = 0;
 

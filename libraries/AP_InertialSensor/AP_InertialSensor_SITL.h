@@ -33,6 +33,9 @@ private:
     void generate_accel(uint8_t instance);
     void generate_gyro(uint8_t instance);
 
+    Vector3f _latestGyro;
+    Vector3f _latestAccel;
+
     SITL::SITL *sitl;
 
     AC_Ext_Nav &_extNav;
