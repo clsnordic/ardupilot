@@ -22,6 +22,7 @@
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Gripper/AP_Gripper.h>
 #include <AP_BLHeli/AP_BLHeli.h>
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 
 #include "GCS.h"
 
@@ -1541,11 +1542,21 @@ void GCS_MAVLINK::send_local_position() const
 {
     const AP_AHRS &ahrs = AP::ahrs();
 
+    AC_Ext_Nav &extNav = AC_Ext_Nav::get_instance();
     Vector3f local_position, velocity;
-    if (!ahrs.get_relative_position_NED_home(local_position) ||
-        !ahrs.get_velocity_NED(velocity)) {
-        // we don't know the position and velocity
-        return;
+    if(extNav.extNavPosEnabled() == 1)
+    {
+        local_position  = extNav.get_position() / 100;
+        velocity        = extNav.get_velocity() / 100;
+        velocity.z *= -0.01;
+
+    } else
+    {
+        if (!ahrs.get_relative_position_NED_home(local_position) ||
+            !ahrs.get_velocity_NED(velocity)) {
+            // we don't know the position and velocity
+            return;
+        }
     }
 
     mavlink_msg_local_position_ned_send(
@@ -2882,17 +2893,42 @@ void GCS_MAVLINK::send_hwstatus()
 
 void GCS_MAVLINK::send_attitude() const
 {
-    const AP_AHRS &ahrs = AP::ahrs();
-    const Vector3f omega = ahrs.get_gyro();
+    const AP_AHRS &ahrsLocal = AP::ahrs();
+    const Vector3f omega = ahrsLocal.get_gyro();
+
+    Vector3f attitude;
+    attitude.x = ahrsLocal.roll;
+    attitude.y = ahrsLocal.pitch;
+    attitude.z = ahrsLocal.yaw;
+
+    Vector3f rate;
+    rate = omega;
+
+    AC_Ext_Nav &extNav = AC_Ext_Nav::get_instance();
+
+    if (extNav.extNavPosEnabled() == 1)
+    {
+        attitude.x = extNav.getRoll();
+        attitude.y = extNav.getPitch();
+        attitude.z = extNav.getYaw();
+    }
+
+    if (extNav.extNavCtrlEnabled()  == 1)
+    {
+        rate = extNav.getLatestGyro();
+    }
+
+
+
     mavlink_msg_attitude_send(
         chan,
         AP_HAL::millis(),
-        ahrs.roll,
-        ahrs.pitch,
-        ahrs.yaw,
-        omega.x,
-        omega.y,
-        omega.z);
+        attitude.x,
+        attitude.y,
+        attitude.z,
+        rate.x,
+        rate.y,
+        rate.z);
 }
 
 int32_t GCS_MAVLINK::global_position_int_alt() const {
@@ -2909,7 +2945,7 @@ void GCS_MAVLINK::send_global_position_int()
     AP_AHRS &ahrs = AP::ahrs();
 
     ahrs.get_position(global_position_current_loc); // return value ignored; we send stale data
-
+    //TODOCLS
     Vector3f vel;
     ahrs.get_velocity_NED(vel);
 

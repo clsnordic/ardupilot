@@ -123,9 +123,9 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
          _latestPosition.x = packet.yPos;
          _latestPosition.y = packet.xPos;
          _latestPosition.z = packet.zPos;
-         _latestAngleMeasurement.x = packet.Roll;
-         _latestAngleMeasurement.y = packet.Pitch;
-         _latestAngleMeasurement.z = packet.Yaw;
+         _latestAngleMeasurement.x = packet.Roll/CDTORAD;
+         _latestAngleMeasurement.y = packet.Pitch/CDTORAD;
+         _latestAngleMeasurement.z = packet.Yaw/CDTORAD;
          _latestVelocity.x = packet.yVel;
          _latestVelocity.y = packet.xVel;
          _latestVelocity.z = packet.zVel;
@@ -168,8 +168,8 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 void AC_Ext_Nav::storeAngRates(mavlink_ext_nav_ctrl_t &packet, Vector3f &gyroMeas)
 {
     gyroMeas.x = packet.rollrate / CDTORAD;
-    gyroMeas.y = packet.pitchrate / DEGX100;
-    gyroMeas.z = -packet.yawrate / DEGX100;
+    gyroMeas.y = packet.pitchrate / CDTORAD;
+    gyroMeas.z = -packet.yawrate / CDTORAD;
 
 }
 void AC_Ext_Nav::storeAccel(mavlink_ext_nav_ctrl_t &packet, Vector3f &accel)
@@ -185,10 +185,6 @@ void AC_Ext_Nav::setExtCtrl(Vector3f &gyro, Vector3f& accel) {
     //Generate a mavlink message and 'force it' to the correct one
     //TODO get this to go over serial link later
     mavlink_message_t msg;
-
-    //convert the gyro data to centi-degrees / s
-
-
 
     mavlink_msg_ext_nav_ctrl_pack(255,
                               200,

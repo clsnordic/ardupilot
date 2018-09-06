@@ -60,8 +60,20 @@ public:
         return _latestGyroMeasurements;
     }
     inline float getYaw() {
-        return _currYaw;
+        return _latestAngleMeasurement.z;
     }
+    inline float getRoll() {
+            return _latestAngleMeasurement.x;
+    }
+    inline float getPitch() {
+            return _latestAngleMeasurement.y;
+    }
+    inline bool recCtrlData() const {
+        return _hasReceivedCtrl;
+    }
+    inline bool recPosData() const {
+        return _hasReceivedPos;
+        }
     #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     void setExtCtrl(Vector3f &gyro, Vector3f& accel);
     void setExtPosVelAtt(Vector3f &pos, Vector3f& vel, Vector3f& ang);
