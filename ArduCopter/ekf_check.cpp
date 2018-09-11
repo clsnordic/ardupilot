@@ -117,7 +117,7 @@ bool Copter::ekf_over_threshold()
     }
 
     // either optflow relative or absolute position estimate OK
-    if (optflow_position_ok() || ekf_position_ok()) {
+    if (optflow_position_ok() || ekf_position_ok() || aid_position_ok()) {
         return false;
     }
     return true;

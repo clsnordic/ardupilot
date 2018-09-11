@@ -900,6 +900,7 @@ private:
     bool position_ok();
     bool ekf_position_ok();
     bool optflow_position_ok();
+    bool aid_position_ok();
     void update_auto_armed();
     bool should_log(uint32_t mask);
     void set_default_frame_class();

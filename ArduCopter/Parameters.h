@@ -211,6 +211,7 @@ public:
         k_param_gcs3,
         k_param_gcs_pid_mask,    // 126
 
+        k_param_ext_nav,
         //
         // 135 : reserved for Solo until features merged with master
         //
@@ -310,7 +311,7 @@ public:
 
         //
         // 210: Waypoint data
-        k_param_ext_nav,
+
         //
         k_param_waypoint_mode = 210, // remove
         k_param_command_total,       // remove

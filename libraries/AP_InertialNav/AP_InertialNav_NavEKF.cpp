@@ -58,7 +58,25 @@ void AP_InertialNav_NavEKF::update(float dt)
         rpy.x = sitl->state.rollDeg;
         rpy.y = sitl->state.pitchDeg;
         rpy.z = sitl->state.yawDeg;
-        _extNav.setExtPosVelAtt(_relpos_cm,_velocity_cm, rpy);
+        Vector3f vel;
+        vel.x = sitl->state.speedN*100;
+        vel.y = sitl->state.speedE*100;
+        vel.z = -sitl->state.speedD*100;
+
+        Location_Class current;
+        current.lat = sitl->state.latitude*1e7;
+        current.lng = sitl->state.longitude*1e7;
+        current.alt = sitl->state.altitude*100;
+
+        /*if(AP_HAL::millis64() - lastPrint >= 6000)
+        {
+            hal.console->printf("current.lat: %d, current.lng: %d, current.alt: %d\n", current.lat, current.lng, current.alt);
+            lastPrint = AP_HAL::millis();
+        } */
+        Vector3f neu;
+        current.get_vector_from_origin_NEU(neu);
+
+        _extNav.setExtPosVelAtt(neu,vel, rpy);
 
         lastPosVelAtt = AP_HAL::millis64();
     }

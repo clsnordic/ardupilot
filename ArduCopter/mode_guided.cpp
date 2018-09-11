@@ -52,12 +52,15 @@ bool Copter::ModeGuided::init(bool ignore_checks)
 bool Copter::ModeGuided::do_user_takeoff_start(float final_alt_above_home)
 {
     guided_mode = Guided_TakeOff;
+    //hal.console->printf("Do user takeoff\n!");
 
     // initialise wpnav destination
     Location_Class target_loc = copter.current_loc;
     target_loc.set_alt_cm(final_alt_above_home, Location_Class::ALT_FRAME_ABOVE_HOME);
 
-    if (!wp_nav->set_wp_destination(target_loc)) {
+    //TODOCLS
+    const Vector3f destination = Vector3f(0,0,final_alt_above_home);
+    if (!wp_nav->set_wp_destination(destination,false)) {
         // failure to set destination can only be because of missing terrain data
         copter.Log_Write_Error(ERROR_SUBSYSTEM_NAVIGATION, ERROR_CODE_FAILED_TO_SET_DESTINATION);
         // failure is propagated to GCS with NAK
@@ -502,6 +505,7 @@ void Copter::ModeGuided::vel_control_run()
     }
 
     // call velocity controller which includes z axis controller
+
     pos_control->update_vel_controller_xyz(ekfNavVelGainScaler);
 
     // call attitude controller

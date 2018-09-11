@@ -323,7 +323,7 @@ bool Copter::position_ok()
     }
 
     // check ekf position estimate
-    return (ekf_position_ok() || optflow_position_ok());
+    return (ekf_position_ok() || optflow_position_ok() || aid_position_ok());
 }
 
 // ekf_position_ok - returns true if the ekf claims it's horizontal absolute position estimate is ok and home position is set
@@ -345,7 +345,14 @@ bool Copter::ekf_position_ok()
         return (filt_status.flags.horiz_pos_abs && !filt_status.flags.const_pos_mode);
     }
 }
-
+bool Copter::aid_position_ok()
+{
+    if(ext_nav.aidingEnabled())
+    {
+        return true;
+    }
+    return false;
+}
 // optflow_position_ok - returns true if optical flow based position estimate is ok
 bool Copter::optflow_position_ok()
 {
@@ -369,6 +376,7 @@ bool Copter::optflow_position_ok()
         enabled = true;
     }
 #endif
+
     if (!enabled) {
         return false;
     }
