@@ -63,6 +63,8 @@ public:
     // Check basic filter health metrics and return a consolidated health status
     bool healthy(void) const;
 
+    void setHorizPosNoise(float& val);
+
     // returns the index of the primary core
     // return -1 if no primary core selected
     int8_t getPrimaryCoreIndex(void) const;
@@ -334,7 +336,7 @@ public:
      * resetTime_ms : system time of the last position reset request (mSec)
      *
     */
-    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms);
+    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Vector3f &vel,const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms);
 
 private:
     uint8_t num_cores; // number of allocated cores

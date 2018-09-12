@@ -319,7 +319,7 @@ public:
      * resetTime_ms : system time of the last position reset request (mSec)
      *
     */
-    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms);
+    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Vector3f &vel, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms);
 
 private:
     // Reference to the global EKF frontend for parameters
@@ -460,12 +460,14 @@ private:
         bool            frameIsNED; // true if the data is in a NED navigation frame
         bool            unitsAreSI; // true if the data length units are scaled in metres
         Vector3f        pos;        // XYZ position measured in a RH navigation frame (m)
+        Vector3f        vel;        // velocities in the NED frame
         Quaternion      quat;       // quaternion describing the rotation from navigation to body frame
         float           posErr;     // spherical poition measurement error 1-std (m)
         float           angErr;     // spherical angular measurement error 1-std (rad)
         const Vector3f *body_offset;// pointer to XYZ position of the sensor in body frame (m)
         uint32_t        time_ms;    // measurement timestamp (msec)
         bool            posReset;   // true when the position measurement has been reset
+
     };
 
     // update the navigation filter status

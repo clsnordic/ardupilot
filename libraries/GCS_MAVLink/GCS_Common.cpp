@@ -2179,9 +2179,10 @@ void GCS_MAVLINK::handle_common_vision_position_estimate_data(const uint64_t use
     const float posErr = 0; // parameter required?
     const float angErr = 0; // parameter required?
     const uint32_t reset_timestamp_ms = 0; // no data available
-
+    const Vector3f vel = Vector3f(0,0,0);
     AP::ahrs().writeExtNavData(sensor_offset,
                                pos,
+                               vel,
                                attitude,
                                posErr,
                                angErr,
@@ -2229,9 +2230,10 @@ void GCS_MAVLINK::handle_att_pos_mocap(mavlink_message_t *msg)
     // correct offboard timestamp to be in local ms since boot
     uint32_t timestamp_ms = correct_offboard_timestamp_usec_to_ms(m.time_usec, PAYLOAD_SIZE(chan, ATT_POS_MOCAP));
     const uint32_t reset_timestamp_ms = 0; // no data available
-
+    const Vector3f vel = Vector3f(0,0,0);
     AP::ahrs().writeExtNavData(sensor_offset,
                                pos,
+                               vel,
                                attitude,
                                posErr,
                                angErr,

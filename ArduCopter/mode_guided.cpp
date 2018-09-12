@@ -58,8 +58,17 @@ bool Copter::ModeGuided::do_user_takeoff_start(float final_alt_above_home)
     Location_Class target_loc = copter.current_loc;
     target_loc.set_alt_cm(final_alt_above_home, Location_Class::ALT_FRAME_ABOVE_HOME);
 
-    //TODOCLS
-    const Vector3f destination = Vector3f(0,0,final_alt_above_home);
+    //TODOCLS Overridden to only use local NED.
+    Vector3f destination;
+
+    if(!ahrs.get_relative_position_NED_origin(destination))
+    {
+
+        return false;
+    }
+    destination.x *= 100;
+    destination.y *= 100;
+    destination.z = final_alt_above_home;
     if (!wp_nav->set_wp_destination(destination,false)) {
         // failure to set destination can only be because of missing terrain data
         copter.Log_Write_Error(ERROR_SUBSYSTEM_NAVIGATION, ERROR_CODE_FAILED_TO_SET_DESTINATION);

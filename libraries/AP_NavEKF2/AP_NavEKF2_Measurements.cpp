@@ -803,7 +803,7 @@ void NavEKF2_core::getTimingStatistics(struct ekf_timing &_timing)
     memset(&timing, 0, sizeof(timing));
 }
 
-void NavEKF2_core::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
+void NavEKF2_core::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Vector3f &vel, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
 {
     // limit update rate to maximum allowed by sensor buffers and fusion process
     // don't try to write to buffer until the filter has been initialised
@@ -826,6 +826,9 @@ void NavEKF2_core::writeExtNavData(const Vector3f &sensOffset, const Vector3f &p
     extNavDataNew.angErr = angErr;
     extNavDataNew.body_offset = &sensOffset;
     extNavDataNew.time_ms = timeStamp_ms;
+
+    //TODOCLS Attempt to include velocity data here as well, so we can set the EKF origin somewhere else then where we start.
+    extNavDataNew.vel = vel;
 
     storedExtNav.push(extNavDataNew);
 

@@ -1183,9 +1183,9 @@ void  AP_AHRS_NavEKF::writeBodyFrameOdom(float quality, const Vector3f &delPos, 
 }
 
 // Write position and quaternion data from an external navigation system
-void AP_AHRS_NavEKF::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
+void AP_AHRS_NavEKF::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Vector3f &vel, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
 {
-    EKF2.writeExtNavData(sensOffset, pos, quat, posErr, angErr, timeStamp_ms, resetTime_ms);
+    EKF2.writeExtNavData(sensOffset, pos, vel, quat, posErr, angErr, timeStamp_ms, resetTime_ms);
 }
 
 
@@ -1521,11 +1521,15 @@ bool AP_AHRS_NavEKF::get_location(struct Location &loc) const
 #endif
     }
 }
-
+void AP_AHRS_NavEKF::setHorizPosNoise(float &val)
+{
+    EKF2.setHorizPosNoise(val);
+}
 // get_variances - provides the innovations normalised using the innovation variance where a value of 0
 // indicates prefect consistency between the measurement and the EKF solution and a value of of 1 is the maximum
 // inconsistency that will be accpeted by the filter
 // boolean false is returned if variances are not available
+
 bool AP_AHRS_NavEKF::get_variances(float &velVar, float &posVar, float &hgtVar, Vector3f &magVar, float &tasVar, Vector2f &offset) const
 {
     switch (ekf_type()) {

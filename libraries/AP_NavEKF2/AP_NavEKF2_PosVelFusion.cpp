@@ -291,6 +291,9 @@ void NavEKF2_core::SelectVelPosFusion()
         fuseVelData = false;
         fuseHgtData = true;
         fusePosData = true;
+        velPosObs[0] = extNavDataDelayed.vel.x;
+        velPosObs[1] = extNavDataDelayed.vel.y;
+        velPosObs[2] = extNavDataDelayed.vel.z;
         velPosObs[3] = extNavDataDelayed.pos.x;
         velPosObs[4] = extNavDataDelayed.pos.y;
         velPosObs[5] = extNavDataDelayed.pos.z;

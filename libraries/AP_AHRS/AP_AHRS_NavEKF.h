@@ -163,7 +163,7 @@ public:
     void writeBodyFrameOdom(float quality, const Vector3f &delPos, const Vector3f &delAng, float delTime, uint32_t timeStamp_ms, const Vector3f &posOffset);
 
     // Write position and quaternion data from an external navigation system
-    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms) override;
+    void writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Vector3f &vel, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms) override;
 
     // inhibit GPS usage
     uint8_t setInhibitGPS(void);
@@ -243,6 +243,7 @@ public:
 
     bool getGpsGlitchStatus() const;
 
+    void setHorizPosNoise(float &val);
     // used by Replay to force start at right timestamp
     void force_ekf_start(void) { _force_ekf = true; }
 

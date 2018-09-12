@@ -111,6 +111,7 @@ private:
     // craete an instance with 100Hz sample rate and 30Hz cutoff
 
     AC_Ext_Nav();
+    friend class NavEKF2;
 
     //AC_Ext_Nav(const AC_Ext_Nav&) = delete;
     //AC_Ext_Nav& operator=(const AC_Ext_Nav&) = delete;
@@ -121,6 +122,7 @@ private:
     uint32_t extNavCalled = 0;
     uint32_t _msLastPosRec = 0;
     uint32_t _msLastCtrlRec = 0;
+
 
 
     Vector3f _extNavRate;
@@ -164,7 +166,7 @@ private:
     AP_Int8 _extNavPosEnabled;
     AP_Int8 _extNavCtrlEnabled;
     AP_Int8 _aidingEnabled;
-    uint32_t _lastAttPosMocap;
+    uint32_t _lastAttPosMocap = 0;
 
 
 
@@ -173,7 +175,7 @@ private:
 
     void storeAngRates(mavlink_ext_nav_ctrl_t &packet, Vector3f &gyroMeas);
     void storeAccel(mavlink_ext_nav_ctrl_t &packet, Vector3f &accel);
-    void sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vector3f& pos, Vector3f& ang);
+    void sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vector3f& pos,Vector3f &vel, Vector3f& ang);
 
 
 

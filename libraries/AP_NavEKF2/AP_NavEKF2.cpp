@@ -933,7 +933,11 @@ void NavEKF2::getMagNED(int8_t instance, Vector3f &magNED) const
         core[instance].getMagNED(magNED);
     }
 }
+void NavEKF2::setHorizPosNoise(float& val)
+{
+    _gpsHorizPosNoise = val;
 
+}
 // return body magnetic field estimates in measurement units / 1000
 void NavEKF2::getMagXYZ(int8_t instance, Vector3f &magXYZ) const
 {
@@ -1479,11 +1483,11 @@ void NavEKF2::getTimingStatistics(int8_t instance, struct ekf_timing &timing) co
  * resetTime_ms : system time of the last position reset request (mSec)
  *
 */
-void NavEKF2::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
+void NavEKF2::writeExtNavData(const Vector3f &sensOffset, const Vector3f &pos, const Vector3f &vel, const Quaternion &quat, float posErr, float angErr, uint32_t timeStamp_ms, uint32_t resetTime_ms)
 {
     if (core) {
         for (uint8_t i=0; i<num_cores; i++) {
-            core[i].writeExtNavData(sensOffset, pos, quat, posErr, angErr, timeStamp_ms, resetTime_ms);
+            core[i].writeExtNavData(sensOffset, pos, vel, quat, posErr, angErr, timeStamp_ms, resetTime_ms);
         }
     }
 }

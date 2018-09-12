@@ -138,31 +138,49 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
          _latestPosition.z = -packet.zPos; // NED
          _latestAngleMeasurement.x = packet.Roll/CDTORAD;
          _latestAngleMeasurement.y = packet.Pitch/CDTORAD;
-         _latestAngleMeasurement.z = wrap_2PI(packet.Yaw/CDTORAD);
+         _latestAngleMeasurement.z = wrap_2PI(-packet.Yaw/CDTORAD); //Opposite
          _latestVelocity.x = packet.yVel;
          _latestVelocity.y = packet.xVel;
          _latestVelocity.z = -packet.zVel; //NED
 
          _hasReceivedPos = true;
          _msLastPosRec = AP_HAL::millis();
-         if(AP::ahrs().home_is_set() && setTimer == 0)
+         if(AP::ahrs().home_is_set() && setTimer == 0 && aidingEnabled())
              {
                  firstCall = AP_HAL::millis();
-                 setTimer++;
+                 ++setTimer;
+                 //TODOCLS Set the EKF parameter to a high value before sending the first attPosMocap msg so the EKF doesnt go crazy
+                 float paramVal = 6;
+                 AP::ahrs_navekf().setHorizPosNoise(paramVal);
              }
-         if(AP_HAL::millis() - _lastAttPosMocap >= 100 && aidingEnabled() && AP::ahrs().home_is_set() && AP_HAL::millis() - firstCall >= 10000)
+         if(AP_HAL::millis() - _lastAttPosMocap >= 100 && aidingEnabled() && AP::ahrs().home_is_set() && AP_HAL::millis() - firstCall >= 500)
          {
 
-             //hal.console->printf("data\n");
-             uint32_t delayedMs = _msLastPosRec;// - 100;
+
+             uint32_t delayedMs = _msLastPosRec - 50;
              uint32_t packetTime = packet.time_usec;
 
-             sendAttPosMsg(packetTime,delayedMs,_latestPosition,_latestAngleMeasurement);
+             sendAttPosMsg(packetTime,delayedMs,_latestPosition, _latestVelocity,_latestAngleMeasurement);
              _lastAttPosMocap = AP_HAL::millis();
+
+             if(setTimer == 1)
+             {
+                 float velVar, posVar, hgtVar, tasVar = 0;
+                 Vector3f magVar;
+                 Vector2f offset;
+                  AP::ahrs_navekf().get_variances(velVar,posVar,hgtVar,magVar,tasVar,offset);
+
+                  if(posVar < 0.1 && AP_HAL::millis() - firstCall >= 5500)
+                  {
+                      float paramVal = 0.3;
+                       AP::ahrs_navekf().setHorizPosNoise(paramVal);
+                       setTimer++;
+                  }
+
+             }
 
 
          }
-
 
          DataFlash_Class::instance()->Log_Write_EXPV(AP_HAL::micros64(), _latestPosition, _latestVelocity, _latestAngleMeasurement, extNavPosEnabled());
          break;
@@ -192,7 +210,7 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
   }
 }
 
-void AC_Ext_Nav::sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vector3f& pos, Vector3f& ang)
+void AC_Ext_Nav::sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vector3f& pos, Vector3f &vel, Vector3f& ang)
 {
 
     // correct offboard timestamp to be in local ms since boot
@@ -200,11 +218,12 @@ void AC_Ext_Nav::sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vec
     attitude.from_euler((float)ang.x,(float)ang.y,(float)ang.z);
 
     const Vector3f sensor_offset = {};
-       const float posErr = 0.1; // parameter required?
-       const float angErr = 0.1; // parameter required?
+       const float posErr = 0.01; // parameter required?
+       const float angErr = 0.01; // parameter required?
     const uint32_t reset_timestamp_ms = 0; // no data available
     AP::ahrs().writeExtNavData(sensor_offset,
                                    pos/100,
+                                   vel/100,
                                    attitude,
                                    posErr,
                                    angErr,
@@ -212,9 +231,9 @@ void AC_Ext_Nav::sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vec
                                    reset_timestamp_ms);
 
 
-        //TODOCLS attitude in quaternions does not equal NKQ1
-        DataFlash_Class::instance()->Log_Write("VISP", "TimeUS,RemTimeUS,PX,PY,PZ,Roll,Pitch,Yaw,Q1,Q2,Q3,Q4",
-                                               "ssmmmrrr----", "FF0000000000", "QQffffffffff",
+
+        DataFlash_Class::instance()->Log_Write("VISP", "TimeUS,RemTimeUS,PX,PY,PZ,Roll,Pitch,Yaw,VX,VY,VZ,Q1,Q2,Q3,Q4",
+                                               "ssmmmrrrmmm----", "FF0000000000000", "QQfffffffffffff",
                                                (uint64_t)AP_HAL::micros64(),
                                                (uint64_t)loggedTime,
                                                (double)pos.x/100,
@@ -223,6 +242,9 @@ void AC_Ext_Nav::sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vec
                                                (double)ang.x,
                                                (double)ang.y,
                                                (double)ang.z,
+                                               (double)vel.x/100,
+                                               (double)vel.y/100,
+                                               (double)vel.z/100,
                                                (double)attitude.q1,
                                                (double)attitude.q2,
                                                (double)attitude.q3,
@@ -283,7 +305,7 @@ void AC_Ext_Nav::setExtPosVelAtt(Vector3f &pos, Vector3f& vel, Vector3f& ang) {
                               vel.z,                      // Up velocity (cm/s)
                               ang.x*100,                      // Roll (centi-degree)
                               ang.y*100,                      // Pitch (centi-degree)
-                              ang.z*100);                      // Yaw (centi-degree)
+                              -ang.z*100);                      // Yaw (centi-degree)
    handleMsg(&msg);
 }
 #endif
