@@ -33,6 +33,16 @@ const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
         // @Values: 0:Disable,1:Enable
         // @User: Advanced
         AP_GROUPINFO("AID",   2, AC_Ext_Nav, _aidingEnabled, 0),
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+        // @Param: AID
+        // @DisplayName: Use external navigation
+        // @Description: This will allow for external low level navigation
+        // @Units: Boolean
+        // @Values: 0:Disable,1:Enable
+        // @User: Advanced
+        AP_GROUPINFO("DROPOUT",   3, AC_Ext_Nav, _simDropout, 0),
+
+#endif
 
         AP_GROUPEND
 };
@@ -73,7 +83,20 @@ void AC_Ext_Nav::update() {
 
     }
 
-    if (AP_HAL::millis() - _msLastPosRec > 40) _hasReceivedPos = false;
+    if (AP_HAL::millis() - _msLastPosRec > 1000 && setTimer > 1)
+        {
+        //If this triggers we've lost communication with the localization board. Force GPS use and hope nothing happens.
+            _hasReceivedPos = false;
+            AP_Int8 val;
+            val = 0;
+            AP::ahrs_navekf().setFusionModeGps(val);
+            if (AP::ahrs().get_origin(_ret)) setTimer = 1;
+            else setTimer = 0;
+            float paramVal = 3;
+             AP::ahrs_navekf().setHorizPosNoise(paramVal);
+             AP::ahrs_navekf().setAltPosNoise(paramVal);
+             gcs().send_text(MAV_SEVERITY_ERROR, "Timeout on localization board message, using GPS!");
+        }
     if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = false;
 }
 
@@ -93,6 +116,14 @@ void AC_Ext_Nav::init(const AP_SerialManager &serial_manager) {
                                                     AP_HAL::micros64(),
                                                     0);
         hal.console->printf("\nDidn't find serial\n");
+    }
+    if(_aidingEnabled == 1 && AP::ahrs_navekf().getFusionModeGps() == 0)
+    {
+        AP_Int8 val;
+        val = 3;
+        AP::ahrs_navekf().setFusionModeGps(val);
+
+
     }
 
 }
@@ -145,15 +176,18 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 
          _hasReceivedPos = true;
          _msLastPosRec = AP_HAL::millis();
-         if(AP::ahrs().home_is_set() && setTimer == 0 && aidingEnabled())
+
+         if(AP::ahrs().get_origin(_ret) && setTimer == 0 && aidingEnabled())
              {
                  firstCall = AP_HAL::millis();
                  ++setTimer;
                  //TODOCLS Set the EKF parameter to a high value before sending the first attPosMocap msg so the EKF doesnt go crazy
-                 float paramVal = 6;
+                 float paramVal = 7;
                  AP::ahrs_navekf().setHorizPosNoise(paramVal);
+                 AP::ahrs_navekf().setAltPosNoise(paramVal);
+                 gcs().send_text(MAV_SEVERITY_INFO, "Got first EXPV message, increasing noise parameters");
              }
-         if(AP_HAL::millis() - _lastAttPosMocap >= 100 && aidingEnabled() && AP::ahrs().home_is_set() && AP_HAL::millis() - firstCall >= 500)
+         if(AP_HAL::millis() - _lastAttPosMocap >= 50 && aidingEnabled() && AP::ahrs().get_origin(_ret) && AP_HAL::millis() - firstCall >= 200)
          {
 
 
@@ -165,21 +199,55 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
 
              if(setTimer == 1)
              {
+                 if(AP::ahrs_navekf().getFusionModeGps() == 0)
+                 {
+                     AP_Int8 val;
+                     val = 3;
+                     AP::ahrs_navekf().setFusionModeGps(val);
+                 }
                  float velVar, posVar, hgtVar, tasVar = 0;
                  Vector3f magVar;
                  Vector2f offset;
                   AP::ahrs_navekf().get_variances(velVar,posVar,hgtVar,magVar,tasVar,offset);
-
-                  if(posVar < 0.1 && AP_HAL::millis() - firstCall >= 5500)
+                  /*if (AP_HAL::millis() - extNavCalled >= 1000)
                   {
-                      float paramVal = 0.3;
+                      hal.console->printf("posVar: %f", posVar);
+                      extNavCalled = AP_HAL::millis();
+                  }*/
+
+                  if(posVar < 0.1 && AP_HAL::millis() - firstCall >= 5500 && hgtVar < 0.1)
+                  {
+                      gcs().send_text(MAV_SEVERITY_INFO, "Certain of position");
+                      float paramVal = 0.1;
                        AP::ahrs_navekf().setHorizPosNoise(paramVal);
+                       AP::ahrs_navekf().setAltPosNoise(paramVal);
                        setTimer++;
                   }
 
+
+
              }
+             if (setTimer == 2 && AP_HAL::millis() - firstCall >= 20000)
+             {
+                 float velVar, posVar, hgtVar, tasVar = 0;
+                  Vector3f magVar;
+                  Vector2f offset;
+                   AP::ahrs_navekf().get_variances(velVar,posVar,hgtVar,magVar,tasVar,offset);
+                 if(posVar < 0.05)
 
+                 {
+                     Location temp_loc;
+                     //hal.console->printf("home is: %d and get_loc: %d", (int)AP::ahrs().home_is_set(), (int)AP::ahrs_navekf().get_location(temp_loc));
+                     if (AP::ahrs_navekf().get_location(temp_loc) && !AP::ahrs().home_is_set()) {
+                         AP::ahrs_navekf().set_home(temp_loc);
+                         AP::ahrs_navekf().lock_home();
+                         gcs().send_text(MAV_SEVERITY_INFO, "Setting home to current location (for failsafe)");
+                         ++setTimer;
 
+                     }
+
+                 }
+             }
          }
 
          DataFlash_Class::instance()->Log_Write_EXPV(AP_HAL::micros64(), _latestPosition, _latestVelocity, _latestAngleMeasurement, extNavPosEnabled());
@@ -285,7 +353,7 @@ void AC_Ext_Nav::setExtCtrl(Vector3f &gyro, Vector3f& accel) {
                               accel.x*100,
                               accel.y*100,
                               accel.z*-100);
-   handleMsg(&msg);
+    if(_simDropout == 0) handleMsg(&msg);
 }
 void AC_Ext_Nav::setExtPosVelAtt(Vector3f &pos, Vector3f& vel, Vector3f& ang) {
     //Generate a mavlink message and 'force it' to the correct one
@@ -306,7 +374,13 @@ void AC_Ext_Nav::setExtPosVelAtt(Vector3f &pos, Vector3f& vel, Vector3f& ang) {
                               ang.x*100,                      // Roll (centi-degree)
                               ang.y*100,                      // Pitch (centi-degree)
                               -ang.z*100);                      // Yaw (centi-degree)
-   handleMsg(&msg);
+    if(_simDropout == 0)
+    {
+        handleMsg(&msg);
+
+    }
+
+
 }
 #endif
 

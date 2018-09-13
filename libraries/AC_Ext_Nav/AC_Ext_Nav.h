@@ -68,7 +68,8 @@ public:
 
             //return (bool)_extNavPosEnabled;
             //TODOCLS testing aiding in the ATT_POS_MOCAP message, always return false here for now
-            return (bool)_aidingEnabled;
+        if (!_hasReceivedPos && _msLastPosRec > 0) return false;
+        return (bool)_aidingEnabled;
         }
 
     inline Vector3f getLatestGyro() {
@@ -124,7 +125,7 @@ private:
     uint32_t _msLastCtrlRec = 0;
 
 
-
+    Location _ret;
     Vector3f _extNavRate;
 
     //_latestAngleMeasurement
@@ -166,6 +167,9 @@ private:
     AP_Int8 _extNavPosEnabled;
     AP_Int8 _extNavCtrlEnabled;
     AP_Int8 _aidingEnabled;
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    AP_Int8 _simDropout;
+#endif
     uint32_t _lastAttPosMocap = 0;
 
 

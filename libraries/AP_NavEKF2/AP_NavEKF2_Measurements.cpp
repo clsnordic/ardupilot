@@ -7,7 +7,7 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_RangeFinder/RangeFinder_Backend.h>
-
+#include <AC_Ext_Nav/AC_Ext_Nav.h>
 #include <stdio.h>
 
 extern const AP_HAL::HAL& hal;
@@ -498,7 +498,7 @@ void NavEKF2_core::readGpsData()
             const struct Location &gpsloc = gps.location();
 
             // Set the EKF origin and magnetic field declination if not previously set  and GPS checks have passed
-            if (gpsGoodToAlign && !validOrigin) {
+            if (gpsGoodToAlign && !validOrigin && !AC_Ext_Nav::get_instance().aidingEnabled()) {
                 setOrigin();
 
                 // set the NE earth magnetic field states using the published declination
@@ -514,7 +514,7 @@ void NavEKF2_core::readGpsData()
             }
 
             // convert GPS measurements to local NED and save to buffer to be fused later if we have a valid origin
-            if (validOrigin) {
+            if (validOrigin && !AC_Ext_Nav::get_instance().aidingEnabled()) {
                 gpsDataNew.pos = location_diff(EKF_origin, gpsloc);
                 gpsDataNew.hgt = (float)((double)0.01 * (double)gpsloc.alt - ekfGpsRefHgt);
                 storedGPS.push(gpsDataNew);

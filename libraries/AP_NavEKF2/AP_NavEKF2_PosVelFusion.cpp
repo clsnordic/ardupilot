@@ -245,7 +245,7 @@ void NavEKF2_core::SelectVelPosFusion()
     readGpsData();
     gpsDataToFuse = storedGPS.recall(gpsDataDelayed,imuDataDelayed.time_ms);
     // Determine if we need to fuse position and velocity data on this time step
-    if (gpsDataToFuse && PV_AidingMode == AID_ABSOLUTE) {
+    if (gpsDataToFuse && PV_AidingMode == AID_ABSOLUTE && !extNavDataToFuse) {
         // set fusion request flags
         if (frontend->_fusionModeGPS <= 1) {
             fuseVelData = true;
@@ -329,7 +329,7 @@ void NavEKF2_core::SelectVelPosFusion()
     selectHeightForFusion();
 
     // if we are using GPS, check for a change in receiver and reset position and height
-    if (gpsDataToFuse && PV_AidingMode == AID_ABSOLUTE && gpsDataDelayed.sensor_idx != last_gps_idx) {
+    if (gpsDataToFuse && PV_AidingMode == AID_ABSOLUTE && gpsDataDelayed.sensor_idx != last_gps_idx && !extNavDataToFuse) {
         // record the ID of the GPS that we are using for the reset
         last_gps_idx = gpsDataDelayed.sensor_idx;
 
@@ -876,7 +876,7 @@ void NavEKF2_core::selectHeightForFusion()
     // If we are not using GPS as the primary height sensor, correct EKF origin height so that
     // combined local NED position height and origin height remains consistent with the GPS altitude
     // This also enables the GPS height to be used as a backup height source
-    if (gpsDataToFuse &&
+    if ((gpsDataToFuse && !extNavDataToFuse) &&
             (((frontend->_originHgtMode & (1 << 0)) && (activeHgtSource == HGT_SOURCE_BARO)) ||
             ((frontend->_originHgtMode & (1 << 1)) && (activeHgtSource == HGT_SOURCE_RNG)))
             ) {
@@ -906,7 +906,7 @@ void NavEKF2_core::selectHeightForFusion()
             // disable fusion if tilted too far
             fuseHgtData = false;
         }
-    } else if  (gpsDataToFuse && (activeHgtSource == HGT_SOURCE_GPS)) {
+    } else if  ((gpsDataToFuse && !extNavDataToFuse) && (activeHgtSource == HGT_SOURCE_GPS)) {
         // using GPS data
         hgtMea = gpsDataDelayed.hgt;
         // enable fusion

@@ -31,8 +31,11 @@
 #include <AP_Compass/AP_Compass.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
+//
+
 class NavEKF2_core;
 class AP_AHRS;
+
 
 class NavEKF2 {
     friend class NavEKF2_core;
@@ -64,7 +67,11 @@ public:
     bool healthy(void) const;
 
     void setHorizPosNoise(float& val);
+    void setAltPosNoise(float& val);
 
+    void setFusionModeGps(AP_Int8& val);
+
+    AP_Int8 getFusionModeGps();
     // returns the index of the primary core
     // return -1 if no primary core selected
     int8_t getPrimaryCoreIndex(void) const;
@@ -344,6 +351,7 @@ private:
     NavEKF2_core *core = nullptr;
     const AP_AHRS *_ahrs;
     const RangeFinder &_rng;
+
 
     uint32_t _frameTimeUsec;        // time per IMU frame
     uint8_t  _framesPerPrediction;  // expected number of IMU frames per prediction

@@ -244,6 +244,10 @@ public:
     bool getGpsGlitchStatus() const;
 
     void setHorizPosNoise(float &val);
+    void setAltPosNoise(float& val);
+    void setFusionModeGps(AP_Int8& val);
+    AP_Int8 getFusionModeGps();
+
     // used by Replay to force start at right timestamp
     void force_ekf_start(void) { _force_ekf = true; }
 

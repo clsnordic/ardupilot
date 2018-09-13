@@ -558,6 +558,7 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
 NavEKF2::NavEKF2(const AP_AHRS *ahrs, const RangeFinder &rng) :
     _ahrs(ahrs),
     _rng(rng)
+
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
@@ -936,6 +937,25 @@ void NavEKF2::getMagNED(int8_t instance, Vector3f &magNED) const
 void NavEKF2::setHorizPosNoise(float& val)
 {
     _gpsHorizPosNoise = val;
+
+
+}
+void NavEKF2::setAltPosNoise(float& val)
+{
+    _baroAltNoise = val;
+
+
+}
+void NavEKF2::setFusionModeGps(AP_Int8& val)
+{
+    _fusionModeGPS = val;
+
+
+}
+AP_Int8 NavEKF2::getFusionModeGps()
+{
+    return _fusionModeGPS;
+
 
 }
 // return body magnetic field estimates in measurement units / 1000

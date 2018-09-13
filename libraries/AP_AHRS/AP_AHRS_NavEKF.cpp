@@ -1525,6 +1525,18 @@ void AP_AHRS_NavEKF::setHorizPosNoise(float &val)
 {
     EKF2.setHorizPosNoise(val);
 }
+void AP_AHRS_NavEKF::setAltPosNoise(float &val)
+{
+    EKF2.setAltPosNoise(val);
+}
+void AP_AHRS_NavEKF::setFusionModeGps(AP_Int8 &val)
+{
+    EKF2.setFusionModeGps(val);
+}
+AP_Int8 AP_AHRS_NavEKF::getFusionModeGps()
+{
+    return EKF2.getFusionModeGps();
+}
 // get_variances - provides the innovations normalised using the innovation variance where a value of 0
 // indicates prefect consistency between the measurement and the EKF solution and a value of of 1 is the maximum
 // inconsistency that will be accpeted by the filter

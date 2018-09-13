@@ -426,12 +426,14 @@ bool NavEKF2_core::assume_zero_sideslip(void) const
 bool NavEKF2_core::setOriginLLH(const Location &loc)
 {
     if (PV_AidingMode == AID_ABSOLUTE && !extNavUsedForPos) {
+
         return false;
     }
+
     EKF_origin = loc;
     ekfGpsRefHgt = (double)0.01 * (double)EKF_origin.alt;
     // define Earth rotation vector in the NED navigation frame at the origin
-    calcEarthRateNED(earthRateNED, _ahrs->get_home().lat);
+    calcEarthRateNED(earthRateNED, EKF_origin.lat);
     validOrigin = true;
     return true;
 }
