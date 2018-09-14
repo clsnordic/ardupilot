@@ -2060,12 +2060,14 @@ void GCS_MAVLINK::set_ekf_origin(const Location& loc)
     // check if EKF origin has already been set
     Location ekf_origin;
     if (ahrs.get_origin(ekf_origin)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "EKF origin already set, ignoring");
         return;
     }
 
     if (!ahrs.set_origin(loc)) {
         return;
     }
+    gcs().send_text(MAV_SEVERITY_INFO, "EKF origin successfully set");
 
     // log ahrs home and ekf origin dataflash
     ahrs.Log_Write_Home_And_Origin();
@@ -2086,6 +2088,8 @@ void GCS_MAVLINK::handle_set_gps_global_origin(const mavlink_message_t *msg)
     }
 
     Location ekf_origin {};
+
+
     ekf_origin.lat = packet.latitude;
     ekf_origin.lng = packet.longitude;
     ekf_origin.alt = packet.altitude / 10;
