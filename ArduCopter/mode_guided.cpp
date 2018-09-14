@@ -52,11 +52,11 @@ bool Copter::ModeGuided::init(bool ignore_checks)
 bool Copter::ModeGuided::do_user_takeoff_start(float final_alt_above_home)
 {
     guided_mode = Guided_TakeOff;
-    //hal.console->printf("Do user takeoff\n!");
+
 
     // initialise wpnav destination
     Location_Class target_loc = copter.current_loc;
-    target_loc.set_alt_cm(final_alt_above_home, Location_Class::ALT_FRAME_ABOVE_HOME);
+    target_loc.set_alt_cm(final_alt_above_home, Location_Class::ALT_FRAME_ABOVE_ORIGIN);
 
     //TODOCLS Overridden to only use local NED.
     Vector3f destination;

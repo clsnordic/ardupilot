@@ -16,6 +16,7 @@ bool Copter::Mode::do_user_takeoff_start(float takeoff_alt_cm)
 // initiate user takeoff - called when MAVLink TAKEOFF command is received
 bool Copter::Mode::do_user_takeoff(float takeoff_alt_cm, bool must_navigate)
 {
+
     if (!copter.motors->armed()) {
         return false;
     }
@@ -27,10 +28,12 @@ bool Copter::Mode::do_user_takeoff(float takeoff_alt_cm, bool must_navigate)
         // this mode doesn't support user takeoff
         return false;
     }
-    if (takeoff_alt_cm <= copter.current_loc.alt) {
+    //TODOCLS Removed this check, as we might start below the NED origin
+    /*if (takeoff_alt_cm <= copter.current_loc.alt) {
         // can't takeoff downwards...
+        hal.console->printf("correct fail!\n");
         return false;
-    }
+    } */
 
 #if FRAME_CONFIG == HELI_FRAME
     // Helicopters should return false if MAVlink takeoff command is received while the rotor is not spinning

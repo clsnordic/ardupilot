@@ -401,7 +401,8 @@ bool AP_AHRS_NavEKF::get_position(struct Location &loc) const
     case EKF_TYPE2:
         if (EKF2.getLLH(loc) && EKF2.getPosD(-1,ned_pos.z) && EKF2.getOriginLLH(-1,origin)) {
             // fixup altitude using relative position from EKF origin
-            loc.alt = origin.alt - ned_pos.z*100;
+            //loc.alt = origin.alt - ned_pos.z*100;
+            loc.alt = ned_pos.z*100; //return NED position
             return true;
         }
         break;

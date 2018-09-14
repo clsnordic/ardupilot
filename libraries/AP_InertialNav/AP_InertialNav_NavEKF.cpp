@@ -68,14 +68,15 @@ void AP_InertialNav_NavEKF::update(float dt)
         current.lng = sitl->state.longitude*1e7;
         current.alt = sitl->state.altitude*100;
 
-        /*if(AP_HAL::millis64() - lastPrint >= 6000)
-        {
-            hal.console->printf("current.lat: %d, current.lng: %d, current.alt: %d\n", current.lat, current.lng, current.alt);
-            lastPrint = AP_HAL::millis();
-        } */
+
         Vector3f neu;
         current.get_vector_from_origin_NEU(neu);
-
+        /*if(AP_HAL::millis64() - printCall >= 6000)
+       {
+           hal.console->printf("current.lat: %d, current.lng: %d, current.alt: %d\n", current.lat, current.lng, current.alt);
+           hal.console->printf("neu.x: %f, neu.y: %f, neu.up: %f\n", neu.x, neu.y, neu.z);
+           printCall = AP_HAL::millis();
+       } */
         _extNav.setExtPosVelAtt(neu,vel, rpy);
 
         lastPosVelAtt = AP_HAL::millis64();

@@ -697,7 +697,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         // param7 : altitude [metres]
 
         float takeoff_alt = packet.param7 * 100;      // Convert m to cm
-        //hal.console->printf("takeoff: %f", takeoff_alt);
+        hal.console->printf("takeoff: %f", takeoff_alt);
         if (!copter.flightmode->do_user_takeoff(takeoff_alt, is_zero(packet.param3))) {
             return MAV_RESULT_FAILED;
         }
@@ -1214,7 +1214,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 pos_vector += copter.inertial_nav.get_position();
             } else {
                 // convert from alt-above-home to alt-above-ekf-origin
-                pos_vector.z = copter.pv_alt_above_origin(pos_vector.z);
+                //We are doing all navigation relative to local NED, no need to do this one
+                //pos_vector.z = copter.pv_alt_above_origin(pos_vector.z);
             }
         }
 
@@ -1247,6 +1248,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         } else if (pos_ignore && !vel_ignore && acc_ignore) {
             copter.mode_guided.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, 0);
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
+
             copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, 1);
         }
 

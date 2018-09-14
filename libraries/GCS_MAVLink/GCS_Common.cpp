@@ -1554,7 +1554,7 @@ void GCS_MAVLINK::send_local_position() const
 
     } else
     {
-        if (!ahrs.get_relative_position_NED_home(local_position) ||
+        if (!ahrs.get_relative_position_NED_origin(local_position) ||
             !ahrs.get_velocity_NED(velocity)) {
             // we don't know the position and velocity
             return;

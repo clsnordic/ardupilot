@@ -259,7 +259,8 @@ void Copter::fast_loop()
     update_flight_mode();
 
     // update home from EKF if necessary
-    //update_home_from_EKF();
+    if(!copter.ext_nav.aidingEnabled()) update_home_from_EKF();
+
 
     // check if we've landed or crashed
     update_land_and_crash_detectors();
