@@ -162,6 +162,8 @@ private:
     bool _hasReceivedPos = false;
     bool _hasReceivedCtrl = false;
 
+    AP_Int16 _extNavDelay;
+
     float _currYaw;
 
     AP_Int8 _extNavPosEnabled;

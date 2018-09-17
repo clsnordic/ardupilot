@@ -48,6 +48,21 @@ bool AP_Arming_Copter::pre_arm_checks(bool display_failure)
         check_failed(ARMING_CHECK_NONE, display_failure, "Motor Interlock Enabled");
     }
 
+    //TODOCLS Check if EKF origin has been set, refuse otherwise
+    Location temp_loc;
+    if(!AP::ahrs().get_origin(temp_loc))
+    {
+        check_failed(ARMING_CHECK_NONE, display_failure, "EKF not set, cannot arm");
+        return false;
+    }
+
+    if (!rc().find_channel_for_option(RC_Channel::aux_func::MOTOR_ESTOP)){
+            copter.set_motor_emergency_stop(false);
+            // if we are using motor Estop switch, it must not be in Estop position
+        } else if (rc().find_channel_for_option(RC_Channel::aux_func::MOTOR_ESTOP) && copter.ap.motor_emergency_stop){
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: Motor Emergency Stopped");
+            return false;
+        }
     // succeed if pre arm checks are disabled
     if (checks_to_perform == ARMING_CHECK_NONE) {
         return true;

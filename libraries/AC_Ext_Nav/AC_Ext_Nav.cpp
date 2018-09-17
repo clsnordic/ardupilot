@@ -33,6 +33,14 @@ const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
         // @Values: 0:Disable,1:Enable
         // @User: Advanced
         AP_GROUPINFO("AID",   2, AC_Ext_Nav, _aidingEnabled, 0),
+        // @Param: DELAY
+        // @DisplayName: External navigation delay
+        // @Description: delay the external navigation message by X ms
+        // @Units: uint32_t
+        // @Values: in 25
+        // @User: Advanced
+        AP_GROUPINFO("DELAY",   3, AC_Ext_Nav, _extNavDelay, 25),
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         // @Param: AID
         // @DisplayName: Use external navigation
@@ -40,7 +48,7 @@ const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
         // @Units: Boolean
         // @Values: 0:Disable,1:Enable
         // @User: Advanced
-        AP_GROUPINFO("DROPOUT",   3, AC_Ext_Nav, _simDropout, 0),
+        AP_GROUPINFO("DROPOUT",   4, AC_Ext_Nav, _simDropout, 0),
 
 #endif
 
@@ -85,6 +93,7 @@ void AC_Ext_Nav::update() {
 
     if (AP_HAL::millis() - _msLastPosRec > 1000 && setTimer > 1)
         {
+        //TODOCLS Sett COMPASS_USE til 1?
         //If this triggers we've lost communication with the localization board. Force GPS use and hope nothing happens.
             _hasReceivedPos = false;
             AP_Int8 val;
@@ -95,6 +104,7 @@ void AC_Ext_Nav::update() {
             float paramVal = 3;
              AP::ahrs_navekf().setHorizPosNoise(paramVal);
              AP::ahrs_navekf().setAltPosNoise(paramVal);
+             //AP::ahrs_navekf().setCompassParam(paramVal);
              gcs().send_text(MAV_SEVERITY_ERROR, "Timeout on localization board message, using GPS!");
         }
     if (AP_HAL::millis() - _msLastCtrlRec > 40) _hasReceivedCtrl = false;
@@ -191,7 +201,7 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
          {
 
 
-             uint32_t delayedMs = _msLastPosRec - 50;
+             uint32_t delayedMs = _msLastPosRec - _extNavDelay;
              uint32_t packetTime = packet.time_usec;
 
              sendAttPosMsg(packetTime,delayedMs,_latestPosition, _latestVelocity,_latestAngleMeasurement);
@@ -250,7 +260,7 @@ void AC_Ext_Nav::handleMsg(mavlink_message_t *msg)
              }
          }
 
-         DataFlash_Class::instance()->Log_Write_EXPV(AP_HAL::micros64(), _latestPosition, _latestVelocity, _latestAngleMeasurement, extNavPosEnabled());
+         DataFlash_Class::instance()->Log_Write_EXPV(AP_HAL::micros64(), _latestPosition, _latestVelocity, _latestAngleMeasurement, aidingEnabled());
          break;
       }
       case MAVLINK_MSG_ID_EXT_NAV_CTRL:
@@ -286,8 +296,8 @@ void AC_Ext_Nav::sendAttPosMsg(uint32_t& loggedTime, uint32_t& timestamp_ms, Vec
     attitude.from_euler((float)ang.x,(float)ang.y,(float)ang.z);
 
     const Vector3f sensor_offset = {};
-       const float posErr = 0.01; // parameter required?
-       const float angErr = 0.01; // parameter required?
+       const float posErr = 0.1; // parameter required?
+       const float angErr = 0.1; // parameter required?
     const uint32_t reset_timestamp_ms = 0; // no data available
     AP::ahrs().writeExtNavData(sensor_offset,
                                    pos/100,
