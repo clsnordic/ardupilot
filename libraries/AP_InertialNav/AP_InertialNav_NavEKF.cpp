@@ -46,7 +46,9 @@ void AP_InertialNav_NavEKF::update(float dt)
         _pos_z_rate = - _pos_z_rate; // InertialNav is NEU
     }
     _extNavPos = _extNav.get_position();
+    _extNavPos.z *= -1;
     _extNavVel = _extNav.get_velocity();
+    _extNavVel.z *= -1;
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 
@@ -115,7 +117,7 @@ struct Location AP_InertialNav_NavEKF::get_origin() const
  */
 const Vector3f &AP_InertialNav_NavEKF::get_position(void) const 
 {
-    if (_extNav.extNavPosEnabled() == 1)
+    if (_extNav.forcePosition() == 1)
     {
         return _extNavPos;
     }
@@ -159,7 +161,7 @@ int32_t AP_InertialNav_NavEKF::get_longitude() const
  */
 const Vector3f &AP_InertialNav_NavEKF::get_velocity() const
 {
-    if (_extNav.extNavPosEnabled() == 1) return _extNavVel;
+    if (_extNav.forceVelocity() == 1) return _extNavVel;
     return _velocity_cm;
 }
 
@@ -170,7 +172,7 @@ const Vector3f &AP_InertialNav_NavEKF::get_velocity() const
  */
 float AP_InertialNav_NavEKF::get_velocity_xy() const
 {
-    if (_extNav.extNavPosEnabled() == 1) return norm(_extNavVel.x, _extNavVel.y);
+    if (_extNav.forceVelocity() == 1) return norm(_extNavVel.x, _extNavVel.y);
     return norm(_velocity_cm.x, _velocity_cm.y);
 }
 
@@ -179,7 +181,7 @@ float AP_InertialNav_NavEKF::get_velocity_xy() const
 */
 float AP_InertialNav_NavEKF::get_pos_z_derivative() const
 {
-    if (_extNav.extNavPosEnabled() == 1) return _extNavVel.z;
+    if (_extNav.forceVelocity() == 1) return _extNavVel.z;
     return _pos_z_rate;
 }
 
@@ -189,7 +191,8 @@ float AP_InertialNav_NavEKF::get_pos_z_derivative() const
  */
 float AP_InertialNav_NavEKF::get_altitude() const
 {
-    if (_extNav.extNavPosEnabled() == 1) return _extNavPos.z;
+    if (_extNav.forcePosition() == 1) return _extNavPos.z;
+
     return _relpos_cm.z;
 }
 
@@ -202,7 +205,7 @@ float AP_InertialNav_NavEKF::get_altitude() const
  */
 float AP_InertialNav_NavEKF::get_velocity_z() const
 {
-    if (_extNav.extNavPosEnabled() == 1) return _extNavVel.z;
+    if (_extNav.forceVelocity() == 1) return _extNavVel.z;
     return _velocity_cm.z;
 }
 

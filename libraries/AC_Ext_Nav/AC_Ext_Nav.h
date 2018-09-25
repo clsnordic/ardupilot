@@ -34,7 +34,7 @@ public:
     //_latestPosition
     //      .x = Position in North (cm)
     //      .y = Position in East (cm)
-    //      .z = Position in Up (cm)
+    //      .z = Position in Down (cm)
     inline Vector3f get_position()  {
 
         return _latestPosition;
@@ -42,7 +42,7 @@ public:
     //_latestVelocity
     //      .x = Velocity in North (cm/s)
     //      .y = Velocity in East (cm/s)
-    //      .z = Velocity in Up (cm/s)
+    //      .z = Velocity in Down (cm/s)
     const inline Vector3f get_velocity()  {
         return _latestVelocity;
     }
@@ -60,6 +60,14 @@ public:
         //return (bool)_extNavCtrlEnabled;
         //TODOCLS testing aiding in the ATT_POS_MOCAP message, always return false here for now
         return false;
+    }
+    inline bool forcePosition() const {
+
+        return (bool)_extNavPosEnabled;
+    }
+    inline bool forceVelocity() const {
+
+        return (bool)_extNavVelEnabled;
     }
     /*inline AP_Int8 enableLowLevelCtrl() const {
         return _extLowLevelCtrlEnabled;
@@ -136,13 +144,13 @@ private:
     //_latestPosition
     //      .x = Position in North (cm)
     //      .y = Position in East (cm)
-    //      .z = Position in Up (cm)
+    //      .z = Position in Down (cm)
     Vector3f _latestPosition = Vector3f(0,0,0);;
 
     //_latestVelocity
     //      .x = Velocity in North (cm/s)
     //      .y = Velocity in East (cm/s)
-    //      .z = Velocity in Up (cm/s)
+    //      .z = Velocity in Down (cm/s)
     Vector3f _latestVelocity = Vector3f(0,0,0);;
 
     Vector3f _latestAccelerations = Vector3f(0,0,0);;
@@ -167,8 +175,11 @@ private:
     float _currYaw;
 
     AP_Int8 _extNavPosEnabled;
-    AP_Int8 _extNavCtrlEnabled;
+    AP_Int8 _extNavVelEnabled;
     AP_Int8 _aidingEnabled;
+    AP_Int8 _forcePosition;
+    AP_Int8 _forceVel;
+    AP_Float _finalHorParam;
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     AP_Int8 _simDropout;
 #endif

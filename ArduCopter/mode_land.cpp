@@ -30,6 +30,12 @@ bool Copter::ModeLand::init(bool ignore_checks)
     
     land_start_time = millis();
 
+    //Reset yaw angle to when we were armed
+    //hal.console->printf("Setting fixed yaw for landing: %f\n", copter.initial_armed_bearing / 100.0f);
+    //auto_yaw.set_fixed_yaw(copter.initial_armed_bearing / 100.0f, 0.0f, 0, 0);
+    auto_yaw.set_mode(AUTO_YAW_RESETTOARMEDYAW);
+
+
     land_pause = false;
 
     // reset flag indicating if pilot has applied roll or pitch inputs during landing

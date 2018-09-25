@@ -1560,7 +1560,7 @@ void GCS_MAVLINK::send_local_position() const
             return;
         }
     }
-
+    //hal.console->printf("LocalPosition: %f, %f, %f\n", local_position.x,local_position.y,local_position.z);
     mavlink_msg_local_position_ned_send(
         chan,
         AP_HAL::millis(),
@@ -2059,7 +2059,8 @@ void GCS_MAVLINK::set_ekf_origin(const Location& loc)
 
     // check if EKF origin has already been set
     Location ekf_origin;
-    if (ahrs.get_origin(ekf_origin)) {
+
+    if (ahrs.get_origin(ekf_origin) && AC_Ext_Nav::get_instance().aidingEnabled()) {
         gcs().send_text(MAV_SEVERITY_INFO, "EKF origin already set, ignoring");
         return;
     }

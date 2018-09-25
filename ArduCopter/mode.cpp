@@ -456,7 +456,7 @@ void Copter::Mode::land_run_horizontal_control()
 
     float target_roll = 0.0f;
     float target_pitch = 0.0f;
-    float target_yaw_rate = 0;
+    //float target_yaw_rate = 0;
 
     // relax loiter target if we might be landed
     if (ap.land_complete_maybe) {
@@ -487,7 +487,7 @@ void Copter::Mode::land_run_horizontal_control()
         }
 
         // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        //target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
     }
 
 #if PRECISION_LANDING == ENABLED
@@ -541,7 +541,8 @@ void Copter::Mode::land_run_horizontal_control()
 
 
     // call attitude controller
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(nav_roll, nav_pitch, target_yaw_rate);
+    attitude_control->input_euler_angle_roll_pitch_yaw(nav_roll, nav_pitch, auto_yaw.yaw(), true);
+    //attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(nav_roll, nav_pitch, target_yaw_rate);
 }
 
 // pass-through functions to reduce code churn on conversion;

@@ -24,7 +24,7 @@ const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
         // @Units: Boolean
         // @Values: 0:Disable,1:Enable
         // @User: Advanced
-        AP_GROUPINFO("CTRL",   1, AC_Ext_Nav, _extNavCtrlEnabled, 0),
+        AP_GROUPINFO("VEL",   1, AC_Ext_Nav, _extNavVelEnabled, 0),
 
         // @Param: AID
         // @DisplayName: Use external navigation
@@ -40,6 +40,29 @@ const AP_Param::GroupInfo AC_Ext_Nav::var_info[] = {
         // @Values: in 25
         // @User: Advanced
         AP_GROUPINFO("DELAY",   3, AC_Ext_Nav, _extNavDelay, 25),
+ /*       // @Param: DELAY
+        // @DisplayName: External navigation delay
+        // @Description: delay the external navigation message by X ms
+        // @Units: uint32_t
+        // @Values: in 25
+        // @User: Advanced
+        AP_GROUPINFO("FPOS",   4, AC_Ext_Nav, _forcePosition, 0),
+
+        // @Param: DELAY
+        // @DisplayName: External navigation delay
+        // @Description: delay the external navigation message by X ms
+        // @Units: uint32_t
+        // @Values: in 25
+        // @User: Advanced
+        AP_GROUPINFO("HORP",   5, AC_Ext_Nav, _finalHorParam, 0.5),
+
+        // @Param: DELAY
+        // @DisplayName: External navigation delay
+        // @Description: delay the external navigation message by X ms
+        // @Units: uint32_t
+        // @Values: in 25
+        // @User: Advanced
+        AP_GROUPINFO("FVEL",   6, AC_Ext_Nav, _forceVel, 0), */
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         // @Param: AID

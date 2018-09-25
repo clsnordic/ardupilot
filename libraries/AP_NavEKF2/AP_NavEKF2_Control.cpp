@@ -425,7 +425,8 @@ bool NavEKF2_core::assume_zero_sideslip(void) const
 // set the LLH location of the filters NED origin
 bool NavEKF2_core::setOriginLLH(const Location &loc)
 {
-    if (PV_AidingMode == AID_ABSOLUTE && !extNavUsedForPos) {
+    //TODOCLSLASLDAØLSKDØLAKSDØLKASd
+    if (PV_AidingMode == AID_ABSOLUTE && extNavUsedForPos) {
 
         return false;
     }
@@ -435,6 +436,7 @@ bool NavEKF2_core::setOriginLLH(const Location &loc)
     // define Earth rotation vector in the NED navigation frame at the origin
     calcEarthRateNED(earthRateNED, EKF_origin.lat);
     validOrigin = true;
+    AP::ahrs().Log_Write_Home_And_Origin();
     return true;
 }
 
@@ -452,6 +454,7 @@ void NavEKF2_core::setOrigin()
     calcEarthRateNED(earthRateNED, _ahrs->get_home().lat);
     validOrigin = true;
     gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u Origin set to GPS",(unsigned)imu_index);
+    AP::ahrs().Log_Write_Home_And_Origin();
 }
 
 // record a yaw reset event
