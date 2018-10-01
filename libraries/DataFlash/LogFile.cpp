@@ -198,8 +198,8 @@ void DataFlash_Class::Log_Write_RFND(const RangeFinder &rangefinder)
 // Write an RCIN packet
 void DataFlash_Class::Log_Write_RCIN(void)
 {
-    uint16_t values[16] = {};
-    rc().get_radio_in(values, 14);
+    uint16_t values[14] = {};
+    rc().get_radio_in(values, ARRAY_SIZE(values));
     struct log_RCIN pkt = {
         LOG_PACKET_HEADER_INIT(LOG_RCIN_MSG),
         time_us       : AP_HAL::micros64(),
@@ -1642,11 +1642,11 @@ void DataFlash_Class::Log_Write_PID(uint8_t msg_type, const PID_Info &info)
         LOG_PACKET_HEADER_INIT(msg_type),
         time_us         : AP_HAL::micros64(),
         desired         : info.desired,
+        actual          : info.actual,
         P               : info.P,
         I               : info.I,
         D               : info.D,
-        FF              : info.FF,
-        AFF             : info.AFF
+        FF              : info.FF
     };
     WriteBlock(&pkt, sizeof(pkt));
 }

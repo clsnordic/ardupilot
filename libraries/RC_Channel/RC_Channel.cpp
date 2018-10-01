@@ -29,7 +29,8 @@ extern const AP_HAL::HAL& hal;
 
 #include <GCS_MAVLink/GCS.h>
 
-uint32_t RC_Channel::configured_mask;
+#include <AC_Sprayer/AC_Sprayer.h>
+#include <AP_Gripper/AP_Gripper.h>
 
 const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Param: MIN
@@ -77,10 +78,11 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Param: OPTION
     // @DisplayName: RC input option
     // @Description: Function assigned to this RC channel
-    // @Values{Copter}: 0:Do Nothing, 2:Flip, 3:Simple Mode, 4:RTL, 5:Save Trim, 7:Save WP, 9:Camera Trigger, 10:RangeFinder, 11:Fence, 13:Super Simple Mode, 14:Acro Trainer, 15:Sprayer, 16:Auto, 17:AutoTune, 18:Land, 19:Gripper, 21:Parachute Enable, 22:Parachute Release, 23:Parachute 3pos, 24:Auto Mission Reset, 25:AttCon Feed Forward, 26:AttCon Accel Limits, 27:Retract Mount, 28:Relay On/Off, 34:Relay2 On/Off, 35:Relay3 On/Off, 36:Relay4 On/Off, 29:Landing Gear, 30:Lost Copter Sound, 31:Motor Emergency Stop, 32:Motor Interlock, 33:Brake, 37:Throw, 38:ADSB-Avoidance, 39:PrecLoiter, 40:Object Avoidance, 41:ArmDisarm, 42:SmartRTL, 43:InvertedFlight, 44:Winch Enable, 45:WinchControl, 46:RC Override Enable, 47:User Function 1, 48:User Function 2, 49:User Function 3
-    // @Values{Rover}: 0:Do Nothing, 4:RTL, 7:Save WP, 9:Camera Trigger, 16:Auto, 28:Relay On/Off, 34:Relay2 On/Off, 35:Relay3 On/Off, 36:Relay4 On/Off, 41:ArmDisarm, 42:SmartRTL, 50:LearnCruise, 51:Manual, 52:Acro, 53:Steering, 54:Hold, 55:Guided, 56:Loiter, 57:Follow
+    // @Values{Copter}: 0:Do Nothing, 2:Flip, 3:Simple Mode, 4:RTL, 5:Save Trim, 7:Save WP, 9:Camera Trigger, 10:RangeFinder, 11:Fence, 13:Super Simple Mode, 14:Acro Trainer, 15:Sprayer, 16:Auto, 17:AutoTune, 18:Land, 19:Gripper, 21:Parachute Enable, 22:Parachute Release, 23:Parachute 3pos, 24:Auto Mission Reset, 25:AttCon Feed Forward, 26:AttCon Accel Limits, 27:Retract Mount, 28:Relay On/Off, 34:Relay2 On/Off, 35:Relay3 On/Off, 36:Relay4 On/Off, 29:Landing Gear, 30:Lost Copter Sound, 31:Motor Emergency Stop, 32:Motor Interlock, 33:Brake, 37:Throw, 38:ADSB-Avoidance, 39:PrecLoiter, 40:Object Avoidance, 41:ArmDisarm, 42:SmartRTL, 43:InvertedFlight, 44:Winch Enable, 45:WinchControl, 46:RC Override Enable, 47:User Function 1, 48:User Function 2, 49:User Function 3, 58:Clear Waypoints
+    // @Values{Rover}: 0:Do Nothing, 4:RTL, 7:Save WP, 9:Camera Trigger, 16:Auto, 28:Relay On/Off, 30:Lost Rover Sound, 34:Relay2 On/Off, 35:Relay3 On/Off, 36:Relay4 On/Off, 41:ArmDisarm, 42:SmartRTL, 46:RC Override Enable, 50:LearnCruise, 51:Manual, 52:Acro, 53:Steering, 54:Hold, 55:Guided, 56:Loiter, 57:Follow, 58:Clear Waypoints, 59:Simple
+    // @Values{Plane}: 0:Do Nothing, 9:Camera Trigger, 28:Relay On/Off, 34:Relay2 On/Off, 30:Lost Plane Sound, 35:Relay3 On/Off, 36:Relay4 On/Off, 41:ArmDisarm, 43:InvertedFlight, 46:RC Override Enable, 58:Clear Waypoints
     // @User: Standard
-    AP_GROUPINFO_FRAME("OPTION",  6, RC_Channel, option, 0, AP_PARAM_FRAME_COPTER|AP_PARAM_FRAME_ROVER),
+    AP_GROUPINFO_FRAME("OPTION",  6, RC_Channel, option, 0, AP_PARAM_FRAME_COPTER|AP_PARAM_FRAME_ROVER|AP_PARAM_FRAME_PLANE),
 
     AP_GROUPEND
 };
@@ -323,8 +325,18 @@ bool RC_Channel::in_trim_dz()
 
 void RC_Channel::set_override(const uint16_t v, const uint32_t timestamp_us)
 {
+    if (!rc().gcs_overrides_enabled()) {
+        return;
+    }
+    // this UINT16_MAX stuff should really, really be in the
+    // mavlink packet handling code.  It can be moved once that
+    // code is in the GCS_MAVLink class!
+    if (v == UINT16_MAX) {
+        return;
+    }
     last_override_time = timestamp_us != 0 ? timestamp_us : AP_HAL::millis();
     override_value = v;
+    RC_Channels::has_new_overrides = true;
 }
 
 void RC_Channel::clear_override()
@@ -335,23 +347,12 @@ void RC_Channel::clear_override()
 
 bool RC_Channel::has_override() const
 {
-    int32_t override_timeout = (int32_t)(*RC_Channels::override_timeout);
-    return (override_value > 0) && ((override_timeout < 0) ||
-                                    ((AP_HAL::millis() - last_override_time) < (uint32_t)(override_timeout * 1000)));
-}
+    if (override_value <= 0) {
+        return false;
+    }
 
-bool RC_Channel::min_max_configured() const
-{
-    if (configured_mask & (1U << ch_in)) {
-        return true;
-    }
-    if (radio_min.configured() && radio_max.configured()) {
-        // once a channel is known to be configured it has to stay
-        // configured due to the nature of AP_Param
-        configured_mask |= (1U<<ch_in);
-        return true;
-    }
-    return false;
+    const float override_timeout_ms = RC_Channels::override_timeout->get() * 1e3f;
+    return is_positive(override_timeout_ms) && ((AP_HAL::millis() - last_override_time) < (uint32_t)override_timeout_ms);
 }
 
 //
@@ -422,18 +423,27 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const aux_switch_
 {
     // init channel options
     switch(ch_option) {
+    case RC_OVERRIDE_ENABLE:
+        do_aux_function(ch_option, ch_flag);
+        break;
     // the following functions to not need to be initialised:
     case RELAY:
     case RELAY2:
     case RELAY3:
     case RELAY4:
     case CAMERA_TRIGGER:
+    case LOST_VEHICLE_SOUND:
     case DO_NOTHING:
+    case CLEAR_WP:
+        break;
+    case GRIPPER:
+    case SPRAYER:
+        do_aux_function(ch_option, ch_flag);
         break;
     default:
         gcs().send_text(MAV_SEVERITY_WARNING, "Failed to initialise RC function (%u)", ch_option);
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        AP_HAL::panic("Initialisation failed");
+        AP_HAL::panic("RC function (%u) initialisation not handled", ch_option);
 #endif
         break;
     }
@@ -480,6 +490,17 @@ void RC_Channel::do_aux_function_camera_trigger(const aux_switch_pos_t ch_flag)
     }
 }
 
+void RC_Channel::do_aux_function_clear_wp(const aux_switch_pos_t ch_flag)
+{
+    AP_Mission *mission = AP::mission();
+    if (mission == nullptr) {
+        return;
+    }
+    if (ch_flag == HIGH) {
+        mission->clear();
+    }
+}
+
 void RC_Channel::do_aux_function_relay(const uint8_t relay, bool val)
 {
     AP_ServoRelayEvents *servorelayevents = AP::servorelayevents();
@@ -489,11 +510,86 @@ void RC_Channel::do_aux_function_relay(const uint8_t relay, bool val)
     servorelayevents->do_set_relay(relay, val);
 }
 
+void RC_Channel::do_aux_function_sprayer(const aux_switch_pos_t ch_flag)
+{
+    AC_Sprayer *sprayer = AP::sprayer();
+    if (sprayer == nullptr) {
+        return;
+    }
+
+    sprayer->run(ch_flag == HIGH);
+    // if we are disarmed the pilot must want to test the pump
+    sprayer->test_pump((ch_flag == HIGH) && !hal.util->get_soft_armed());
+}
+
+void RC_Channel::do_aux_function_gripper(const aux_switch_pos_t ch_flag)
+{
+    AP_Gripper *gripper = AP::gripper();
+    if (gripper == nullptr) {
+        return;
+    }
+
+    switch(ch_flag) {
+    case LOW:
+        gripper->release();
+//        copter.Log_Write_Event(DATA_GRIPPER_RELEASE);
+        break;
+    case MIDDLE:
+        // nothing
+        break;
+    case HIGH:
+        gripper->grab();
+//        copter.Log_Write_Event(DATA_GRIPPER_GRAB);
+        break;
+    }
+}
+
+void RC_Channel::do_aux_function_lost_vehicle_sound(const aux_switch_pos_t ch_flag)
+{
+    switch (ch_flag) {
+    case HIGH:
+        AP_Notify::flags.vehicle_lost = true;
+        break;
+    case MIDDLE:
+        // nothing
+        break;
+    case LOW:
+        AP_Notify::flags.vehicle_lost = false;
+        break;
+    }
+}
+
+void RC_Channel::do_aux_function_rc_override_enable(const aux_switch_pos_t ch_flag)
+{
+    switch (ch_flag) {
+    case HIGH: {
+        rc().set_gcs_overrides_enabled(true);
+        break;
+    }
+    case MIDDLE:
+        // nothing
+        break;
+    case LOW: {
+        rc().set_gcs_overrides_enabled(false);
+        break;
+    }
+    }
+}
+
 void RC_Channel::do_aux_function(const aux_func_t ch_option, const aux_switch_pos_t ch_flag)
 {
     switch(ch_option) {
     case CAMERA_TRIGGER:
         do_aux_function_camera_trigger(ch_flag);
+        break;
+
+    case GRIPPER:
+        do_aux_function_gripper(ch_flag);
+        break;
+
+    case RC_OVERRIDE_ENABLE:
+        // Allow or disallow RC_Override
+        do_aux_function_rc_override_enable(ch_flag);
         break;
 
     case RELAY:
@@ -507,6 +603,17 @@ void RC_Channel::do_aux_function(const aux_func_t ch_option, const aux_switch_po
         break;
     case RELAY4:
         do_aux_function_relay(3, ch_flag == HIGH);
+        break;
+    case CLEAR_WP:
+        do_aux_function_clear_wp(ch_flag);
+        break;
+
+    case SPRAYER:
+        do_aux_function_sprayer(ch_flag);
+        break;
+
+    case LOST_VEHICLE_SOUND:
+        do_aux_function_lost_vehicle_sound(ch_flag);
         break;
 
     default:
@@ -557,7 +664,7 @@ bool RC_Channels::duplicate_options_exist()
             continue;
         }
         const uint16_t option = c->option.get();
-        if (option > sizeof(auxsw_option_counts)) {
+        if (option >= sizeof(auxsw_option_counts)) {
             continue;
         }
         auxsw_option_counts[option]++;

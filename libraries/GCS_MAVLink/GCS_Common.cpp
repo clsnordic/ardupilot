@@ -25,6 +25,8 @@
 #include <AP_Gripper/AP_Gripper.h>
 #include <AP_BLHeli/AP_BLHeli.h>
 #include <AC_Ext_Nav/AC_Ext_Nav.h>
+#include <AP_Common/Semaphore.h>
+
 
 #include "GCS.h"
 
@@ -206,12 +208,31 @@ void GCS_MAVLINK::send_battery_status(const AP_BattMonitor &battery,
 
     float temp;
     bool got_temperature = battery.get_temperature(temp, instance);
+
+    // ensure we always send a voltage estimate to the GCS, because not all battery monitors monitor individual cells
+    // as a work around for this we create a set of fake cells to be used if the backend doesn't provide direct monitoring
+    // the GCS can then recover the pack voltage by summing all non ignored cell values. Because this is looped we can
+    // report a pack up to 655.34 V with this method
+    AP_BattMonitor::cells fake_cells;
+    if (!battery.has_cell_voltages(instance)) {
+        float voltage = battery.voltage(instance) * 1e3f;
+        for (uint8_t i = 0; i < MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN; i++) {
+          if (voltage < 0.001f) {
+              // too small to send to the GCS, set it to the no cell value
+              fake_cells.cells[i] = UINT16_MAX;
+          } else {
+              fake_cells.cells[i] = MIN(voltage, 65534.0f); // Can't send more then UINT16_MAX - 1 in a cell
+              voltage -= 65534.0f;
+          }
+        }
+    }
+
     mavlink_msg_battery_status_send(chan,
                                     instance, // id
                                     MAV_BATTERY_FUNCTION_UNKNOWN, // function
                                     MAV_BATTERY_TYPE_UNKNOWN, // type
                                     got_temperature ? ((int16_t) (temp * 100)) : INT16_MAX, // temperature. INT16_MAX if unknown
-                                    battery.get_cell_voltages(instance).cells, // cell voltages
+                                    battery.has_cell_voltages(instance) ? battery.get_cell_voltages(instance).cells : fake_cells.cells, // cell voltages
                                     battery.has_current(instance) ? battery.current_amps(instance) * 100 : -1, // current in centiampere
                                     battery.has_current(instance) ? battery.consumed_mah(instance) : -1,       // total consumed current in milliampere.hour
                                     battery.has_consumed_energy(instance) ? battery.consumed_wh(instance) * 36 : -1, // consumed energy in hJ (hecto-Joules)
@@ -1006,7 +1027,7 @@ void GCS_MAVLINK::send_radio_in()
     mavlink_status_t *status = mavlink_get_channel_status(chan);
 
     uint16_t values[18] = {};
-    rc().get_radio_in(values, 18);
+    rc().get_radio_in(values, ARRAY_SIZE(values));
 
     if (status && (status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1)) {
         // for mavlink1 send RC_CHANNELS_RAW, for compatibility with OSD implementations
@@ -1265,6 +1286,8 @@ void GCS::send_statustext(MAV_SEVERITY severity, uint8_t dest_bitmask, const cha
     statustext.msg.severity = severity;
     strncpy(statustext.msg.text, text, sizeof(statustext.msg.text));
 
+    WITH_SEMAPHORE(_statustext_sem);
+    
     // The force push will ensure comm links do not block other comm links forever if they fail.
     // If we push to a full buffer then we overwrite the oldest entry, effectively removing the
     // block but not until the buffer fills up.
@@ -1343,6 +1366,7 @@ void GCS::retry_deferred()
             chan(i).retry_deferred();
         }
     }
+    WITH_SEMAPHORE(_statustext_sem);
     service_statustext();
 }
 
@@ -1846,8 +1870,12 @@ MAV_RESULT GCS_MAVLINK::handle_preflight_reboot(const mavlink_command_long_t &pa
     // force safety on
     hal.rcout->force_safety_on();
     hal.rcout->force_safety_no_wait();
-    hal.scheduler->delay(200);
 
+    // flush pending parameter writes
+    AP_Param::flush();
+
+    hal.scheduler->delay(200);
+    
     // when packet.param1 == 3 we reboot to hold in bootloader
     const bool hold_in_bootloader = is_equal(packet.param1, 3.0f);
     hal.scheduler->reboot(hold_in_bootloader);
@@ -2009,7 +2037,7 @@ void GCS_MAVLINK::handle_system_time_message(const mavlink_message_t *msg)
 
 MAV_RESULT GCS_MAVLINK::handle_command_camera(const mavlink_command_long_t &packet)
 {
-    AP_Camera *camera = get_camera();
+    AP_Camera *camera = AP::camera();
     if (camera == nullptr) {
         return MAV_RESULT_UNSUPPORTED;
     }
@@ -2309,7 +2337,7 @@ void GCS_MAVLINK::handle_common_message(mavlink_message_t *msg)
 
     case MAVLINK_MSG_ID_DIGICAM_CONTROL:
         {
-            AP_Camera *camera = get_camera();
+            AP_Camera *camera = AP::camera();
             if (camera == nullptr) {
                 return;
             }
@@ -2531,10 +2559,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_flash_bootloader(const mavlink_command_lo
 
 MAV_RESULT GCS_MAVLINK::handle_command_preflight_set_sensor_offsets(const mavlink_command_long_t &packet)
 {
-    Compass *compass = get_compass();
-    if (compass == nullptr) {
-        return MAV_RESULT_UNSUPPORTED;
-    }
+    Compass &compass = AP::compass();
 
     uint8_t compassNumber = -1;
     if (is_equal(packet.param1, 2.0f)) {
@@ -2547,7 +2572,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_preflight_set_sensor_offsets(const mavlin
     if (compassNumber == (uint8_t) -1) {
         return MAV_RESULT_FAILED;
     }
-    compass->set_and_save_offsets(compassNumber, packet.param2, packet.param3, packet.param4);
+    compass.set_and_save_offsets(compassNumber, packet.param2, packet.param3, packet.param4);
     return MAV_RESULT_ACCEPTED;
 }
 
@@ -2633,11 +2658,7 @@ MAV_RESULT GCS_MAVLINK::handle_command_preflight_calibration(const mavlink_comma
 
 MAV_RESULT GCS_MAVLINK::handle_command_mag_cal(const mavlink_command_long_t &packet)
 {
-    Compass *compass = get_compass();
-    if (compass == nullptr) {
-        return MAV_RESULT_UNSUPPORTED;
-    }
-    return compass->handle_mag_cal_command(packet);
+    return AP::compass().handle_mag_cal_command(packet);
 }
 
 MAV_RESULT GCS_MAVLINK::handle_command_request_autopilot_capabilities(const mavlink_command_long_t &packet)
@@ -2695,11 +2716,9 @@ MAV_RESULT GCS_MAVLINK::handle_command_do_gripper(const mavlink_command_long_t &
     switch ((uint8_t)packet.param2) {
     case GRIPPER_ACTION_RELEASE:
         gripper->release();
-        gcs().send_text(MAV_SEVERITY_INFO, "Gripper Released");
         break;
     case GRIPPER_ACTION_GRAB:
         gripper->grab();
-        gcs().send_text(MAV_SEVERITY_INFO, "Gripper Grabbed");
         break;
     default:
         result = MAV_RESULT_FAILED;
@@ -2840,18 +2859,15 @@ void GCS_MAVLINK::handle_command_int(mavlink_message_t *msg)
 
 bool GCS_MAVLINK::try_send_compass_message(const enum ap_message id)
 {
-    Compass *compass = get_compass();
-    if (compass == nullptr) {
-        return true;
-    }
+    Compass &compass = AP::compass();
     bool ret = true;
     switch (id) {
     case MSG_MAG_CAL_PROGRESS:
-        compass->send_mag_cal_progress(chan);
+        compass.send_mag_cal_progress(chan);
         ret = true;;
         break;
     case MSG_MAG_CAL_REPORT:
-        compass->send_mag_cal_report(chan);
+        compass.send_mag_cal_report(chan);
         ret = true;
         break;
     default:
@@ -2989,7 +3005,6 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_NEXT_PARAM:
         CHECK_PAYLOAD_SIZE(PARAM_VALUE);
         queued_param_send();
-        ret = true;
         break;
 
     case MSG_HEARTBEAT:
@@ -3001,7 +3016,6 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_HWSTATUS:
         CHECK_PAYLOAD_SIZE(HWSTATUS);
         send_hwstatus();
-        ret = true;
         break;
 
     case MSG_LOCATION:
@@ -3039,7 +3053,6 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
     case MSG_EXTENDED_STATUS2:
         CHECK_PAYLOAD_SIZE(MEMINFO);
         send_meminfo();
-        ret = true;
         break;
 
     case MSG_RANGEFINDER:
@@ -3051,7 +3064,7 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 
     case MSG_CAMERA_FEEDBACK:
         {
-            AP_Camera *camera = get_camera();
+            AP_Camera *camera = AP::camera();
             if (camera == nullptr) {
                 break;
             }
@@ -3159,7 +3172,6 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
         AP_HAL::panic("Sending unknown ap_message %u", id);
 #endif
-        ret = true;
         break;
     }
 

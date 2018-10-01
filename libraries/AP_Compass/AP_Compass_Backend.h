@@ -25,7 +25,7 @@ class Compass;  // forward declaration
 class AP_Compass_Backend
 {
 public:
-    AP_Compass_Backend(Compass &compass);
+    AP_Compass_Backend();
 
     // we declare a virtual destructor so that drivers can
     // override with a custom destructor if need be.
@@ -33,9 +33,6 @@ public:
 
     // read sensor data
     virtual void read(void) = 0;
-
-    // callback for UAVCAN messages
-    virtual void handle_mag_msg(Vector3f &mag) {};
 
     /*
       device driver IDs. These are used to fill in the devtype field

@@ -12,6 +12,7 @@ from pysim import util
 
 from common import AutoTest
 from common import NotAchievedException
+from common import PreconditionFailedException
 
 # get location of scripts
 testdir = os.path.dirname(os.path.realpath(__file__))
@@ -90,11 +91,12 @@ class AutoTestPlane(AutoTest):
 
     def takeoff(self):
         """Takeoff get to 30m altitude."""
-        self.wait_ready_to_arm()
-        self.arm_vehicle()
 
         self.mavproxy.send('switch 4\n')
         self.wait_mode('FBWA')
+
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
 
         # some rudder to counteract the prop torque
         self.set_rc(4, 1700)
@@ -312,7 +314,6 @@ class AutoTestPlane(AutoTest):
         self.mavproxy.send("mode STABILIZE\n")
         self.wait_mode('STABILIZE')
 
-        count = 1
         while count > 0:
             self.progress("Starting roll")
             self.set_rc(1, 2000)
@@ -341,7 +342,6 @@ class AutoTestPlane(AutoTest):
         self.mavproxy.send("mode ACRO\n")
         self.wait_mode('ACRO')
 
-        count = 1
         while count > 0:
             self.progress("Starting roll")
             self.set_rc(1, 1000)
@@ -376,7 +376,7 @@ class AutoTestPlane(AutoTest):
         self.set_rc(3, 1700)
         return self.wait_level_flight()
 
-    def test_FBWB(self, count=1, mode='FBWB'):
+    def test_FBWB(self, mode='FBWB'):
         """Fly FBWB or CRUISE mode."""
         self.mavproxy.send("mode %s\n" % mode)
         self.wait_mode(mode)
@@ -440,13 +440,16 @@ class AutoTestPlane(AutoTest):
 
         return self.wait_level_flight()
 
-    def fly_mission(self, filename, height_accuracy=-1, target_altitude=None):
-        """Fly a mission from a file."""
-        self.progress("Flying mission %s" % filename)
+    def wp_load(self, filename):
         self.mavproxy.send('wp load %s\n' % filename)
         self.mavproxy.expect('Flight plan received')
         self.mavproxy.send('wp list\n')
         self.mavproxy.expect('Requesting [0-9]+ waypoints')
+
+    def fly_mission(self, filename):
+        """Fly a mission from a file."""
+        self.progress("Flying mission %s" % filename)
+        self.wp_load(filename)
         self.mavproxy.send('switch 1\n')  # auto mode
         self.wait_mode('AUTO')
         self.wait_waypoint(1, 7, max_dist=60)
@@ -454,8 +457,132 @@ class AutoTestPlane(AutoTest):
         self.mavproxy.expect("Auto disarmed")
         self.progress("Mission OK")
 
+    def fly_flaps(self):
+        """Test flaps functionality."""
+        filename = os.path.join(testdir, "flaps.txt")
+        self.context_push()
+        ex = None
+        try:
+            flaps_ch = 5
+            servo_ch = 5
+            self.set_parameter("SERVO%u_FUNCTION" % servo_ch, 3) # flapsauto
+            self.set_parameter("FLAP_IN_CHANNEL", flaps_ch)
+            self.set_parameter("LAND_FLAP_PERCNT", 50)
+            self.set_parameter("LOG_DISARMED", 1)
+            flaps_ch_min = 1000
+            flaps_ch_trim = 1500
+            flaps_ch_max = 2000
+            self.set_parameter("RC%u_MIN" % flaps_ch, flaps_ch_min)
+            self.set_parameter("RC%u_MAX" % flaps_ch, flaps_ch_max)
+            self.set_parameter("RC%u_TRIM" % flaps_ch, flaps_ch_trim)
+
+            servo_ch_min = 1200
+            servo_ch_trim = 1300
+            servo_ch_max = 1800
+            self.set_parameter("SERVO%u_MIN" % servo_ch, servo_ch_min)
+            self.set_parameter("SERVO%u_MAX" % servo_ch, servo_ch_max)
+            self.set_parameter("SERVO%u_TRIM" % servo_ch, servo_ch_trim)
+
+            # check flaps are not deployed:
+            self.set_rc(flaps_ch, flaps_ch_min)
+            self.wait_servo_channel_value(servo_ch, servo_ch_min)
+            # deploy the flaps:
+            self.set_rc(flaps_ch, flaps_ch_max)
+            tstart = self.get_sim_time()
+            self.wait_servo_channel_value(servo_ch, servo_ch_max)
+            tstop = self.get_sim_time_cached()
+            delta_time = tstop - tstart
+            delta_time_min = 0.5
+            delta_time_max = 1.5
+            if delta_time < delta_time_min or delta_time > delta_time_max:
+                self.progress("Flaps Slew not working (%f seconds)" %
+                              (delta_time,))
+                raise NotAchievedException()
+            # undeploy flaps:
+            self.set_rc(flaps_ch, flaps_ch_min)
+            self.wait_servo_channel_value(servo_ch, servo_ch_min)
+
+            self.progress("Flying mission %s" % filename)
+            self.wp_load(filename)
+            self.mavproxy.send('wp set 1\n')
+            self.mavproxy.send('switch 1\n')  # auto mode
+            self.wait_mode('AUTO')
+            self.wait_ready_to_arm()
+            self.arm_vehicle()
+            tstart = self.get_sim_time_cached()
+            last_mission_current_msg = 0
+            last_seq = None
+            while self.armed():
+                m = self.mav.recv_match(type='MISSION_CURRENT', blocking=True)
+                time_delta = (self.get_sim_time_cached() -
+                              last_mission_current_msg)
+                if (time_delta >1 or
+                    m.seq != last_seq):
+                    dist = None
+                    x = self.mav.messages.get("NAV_CONTROLLER_OUTPUT", None)
+                    if x is not None:
+                        dist = x.wp_dist
+                    self.progress("MISSION_CURRENT.seq=%u (dist=%s)" %
+                                  (m.seq,str(dist)))
+                    last_mission_current_msg = self.get_sim_time_cached()
+                    last_seq = m.seq
+            # flaps should undeploy at the end
+            self.wait_servo_channel_value(servo_ch, servo_ch_min, timeout=30)
+
+            # do a short flight in FBWA, watching for flaps
+            # self.mavproxy.send('switch 4\n')
+            # self.wait_mode('FBWA')
+            # self.wait_seconds(10)
+            # self.mavproxy.send('switch 6\n')
+            # self.wait_mode('MANUAL')
+            # self.wait_seconds(10)
+
+            self.progress("Flaps OK")
+        except Exception as e:
+            ex = e
+        self.context_pop()
+        if ex:
+            if self.armed():
+                self.disarm_vehicle()
+            raise ex
+
+    def test_rc_relay(self):
+        '''test toggling channel 12 toggles relay'''
+        off = self.get_parameter("SIM_PIN_MASK")
+        if off:
+            raise PreconditionFailedException()
+        self.set_rc(12, 2000)
+        self.mav.wait_heartbeat()
+        self.mav.wait_heartbeat()
+        on = self.get_parameter("SIM_PIN_MASK")
+        if not on:
+            raise NotAchievedException()
+        self.set_rc(12, 1000)
+        self.mav.wait_heartbeat()
+        self.mav.wait_heartbeat()
+        off = self.get_parameter("SIM_PIN_MASK")
+        if off:
+            raise NotAchievedException()
+
+    def test_rc_option_camera_trigger(self):
+        '''test toggling channel 12 takes picture'''
+        x = self.mav.messages.get("CAMERA_FEEDBACK", None)
+        if x is not None:
+            raise PreconditionFailedException()
+        self.set_rc(12, 2000)
+        tstart = self.get_sim_time()
+        while self.get_sim_time() - tstart < 10:
+            x = self.mav.messages.get("CAMERA_FEEDBACK", None)
+            if x is not None:
+                break
+            self.mav.wait_heartbeat()
+        self.set_rc(12, 1000)
+        if x is None:
+            raise NotAchievedException()
+
     def autotest(self):
         """Autotest ArduPlane in SITL."""
+        self.check_test_syntax(test_file=os.path.realpath(__file__))
         if not self.hasInit:
             self.init()
 
@@ -468,6 +595,19 @@ class AutoTestPlane(AutoTest):
             self.set_rc_default()
             self.set_rc(3, 1000)
             self.set_rc(8, 1800)
+
+            self.set_parameter("RC12_OPTION", 9)
+            self.reboot_sitl() # needed for RC12_OPTION to take effect
+
+            self.run_test("Test RC Option - Camera Trigger",
+                          self.test_rc_option_camera_trigger)
+
+            self.set_parameter("RC12_OPTION", 28)
+            self.reboot_sitl() # needed for RC12_OPTION to take effect
+
+            self.run_test("Test Relay RC Channel Option",
+                          self.test_rc_relay)
+
             self.progress("Waiting for GPS fix")
             self.mav.recv_match(condition='VFR_HUD.alt>10', blocking=True)
             self.mav.wait_gps_fix()
@@ -475,6 +615,13 @@ class AutoTestPlane(AutoTest):
                 self.mav.wait_gps_fix()
             self.homeloc = self.mav.location()
             self.progress("Home location: %s" % self.homeloc)
+            self.wait_ready_to_arm()
+            self.run_test("Arm features", self.test_arm_feature)
+
+            self.run_test("Flaps", self.fly_flaps)
+
+            self.mavproxy.send('switch 6\n')
+            self.wait_mode('MANUAL')
 
             self.run_test("Takeoff", self.takeoff)
 
@@ -500,15 +647,13 @@ class AutoTestPlane(AutoTest):
 
             self.run_test("Mission test",
                           lambda: self.fly_mission(
-                              os.path.join(testdir, "ap1.txt"),
-                              height_accuracy=10,
-                              target_altitude=self.homeloc.alt+100))
+                              os.path.join(testdir, "ap1.txt")))
 
             self.run_test("Log download",
                           lambda: self.log_download(
                               self.buildlogs_path("ArduPlane-log.bin")))
 
-        except pexpect.TIMEOUT as e:
+        except pexpect.TIMEOUT:
             self.progress("Failed with timeout")
             self.fail_list.append("timeout")
 
@@ -517,4 +662,7 @@ class AutoTestPlane(AutoTest):
         if len(self.fail_list):
             self.progress("FAILED: %s" % self.fail_list)
             return False
+
+        self.progress("Max set_rc_timeout=%s" % self.max_set_rc_timeout);
+
         return True

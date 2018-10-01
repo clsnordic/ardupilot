@@ -110,7 +110,7 @@ void memory_flush_all(void)
  */
 void stm32_set_utc_usec(uint64_t time_utc_usec)
 {
-    uint64_t now = hrt_micros();
+    uint64_t now = hrt_micros64();
     if (now <= time_utc_usec) {
         utc_time_offset = time_utc_usec - now;
     }
@@ -121,7 +121,7 @@ void stm32_set_utc_usec(uint64_t time_utc_usec)
 */
 uint64_t stm32_get_utc_usec()
 {
-    return hrt_micros() + utc_time_offset;
+    return hrt_micros64() + utc_time_offset;
 }
 
 struct utc_tm {
@@ -219,6 +219,7 @@ uint32_t get_fattime()
     return fattime;
 }
 
+#if !defined(NO_FASTBOOT)
 // get RTC backup register 0
 static uint32_t get_rtc_backup0(void)
 {
@@ -251,6 +252,8 @@ void set_fast_reboot(enum rtc_boot_magic v)
 {
     set_rtc_backup0(v);
 }
+
+#endif //NO_FASTBOOT
 
 /*
   enable peripheral power if needed This is done late to prevent

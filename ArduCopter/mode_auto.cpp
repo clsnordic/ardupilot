@@ -534,8 +534,8 @@ bool Copter::ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 #endif
 
     default:
-        // do nothing with unrecognized MAVLink messages
-        break;
+        // unable to use the command, allow the vehicle to try the next command
+        return false;
     }
 
     // always return success
@@ -829,6 +829,7 @@ void Copter::ModeAuto::land_run()
     if (!motors->armed() || !ap.auto_armed || ap.land_complete || !motors->get_interlock()) {
         zero_throttle_and_relax_ac();
         // set target to current position
+        loiter_nav->clear_pilot_desired_acceleration();
         loiter_nav->init_target();
         return;
     }
@@ -924,6 +925,7 @@ void Copter::ModeAuto::payload_place_run()
     if (!payload_place_run_should_run()) {
         zero_throttle_and_relax_ac();
         // set target to current position
+        loiter_nav->clear_pilot_desired_acceleration();
         loiter_nav->init_target();
         return;
     }
@@ -933,6 +935,7 @@ void Copter::ModeAuto::payload_place_run()
 
     switch (nav_payload_place.state) {
     case PayloadPlaceStateType_FlyToLocation:
+        return wp_run();
     case PayloadPlaceStateType_Calibrating_Hover_Start:
     case PayloadPlaceStateType_Calibrating_Hover:
         return payload_place_run_loiter();
@@ -1564,9 +1567,8 @@ bool Copter::ModeAuto::verify_payload_place()
         if (!copter.wp_nav->reached_wp_destination()) {
             return false;
         }
-        // we're there; set loiter target
-        nav_payload_place.state = PayloadPlaceStateType_Calibrating_Hover_Start;
-        FALLTHROUGH;
+        payload_place_start();
+        return false;
     case PayloadPlaceStateType_Calibrating_Hover_Start:
         // hover for 1 second to get an idea of what our hover
         // throttle looks like

@@ -197,20 +197,14 @@ AC_PosControl::AC_PosControl(const AP_AHRS_View& ahrs, const AP_InertialNav& ina
     _p_pos_xy(POSCONTROL_POS_XY_P),
     _pid_vel_xy(POSCONTROL_VEL_XY_P, POSCONTROL_VEL_XY_I, POSCONTROL_VEL_XY_D, POSCONTROL_VEL_XY_IMAX, POSCONTROL_VEL_XY_FILT_HZ, POSCONTROL_VEL_XY_FILT_D_HZ, POSCONTROL_DT_50HZ),
     _dt(POSCONTROL_DT_400HZ),
-    _last_update_xy_ms(0),
-    _last_update_z_ms(0),
     _speed_down_cms(POSCONTROL_SPEED_DOWN),
     _speed_up_cms(POSCONTROL_SPEED_UP),
     _speed_cms(POSCONTROL_SPEED),
     _accel_z_cms(POSCONTROL_ACCEL_Z),
-    _accel_last_z_cms(0.0f),
     _accel_cms(POSCONTROL_ACCEL_XY),
     _leash(POSCONTROL_LEASH_LENGTH_MIN),
     _leash_down_z(POSCONTROL_LEASH_LENGTH_MIN),
     _leash_up_z(POSCONTROL_LEASH_LENGTH_MIN),
-    _roll_target(0.0f),
-    _pitch_target(0.0f),
-    _distance_to_target(0.0f),
     _accel_target_filter(POSCONTROL_ACCEL_FILTER_HZ)
 {
     AP_Param::setup_object_defaults(this, var_info);
@@ -249,11 +243,9 @@ void AC_PosControl::set_dt(float delta_sec)
     _vel_error_filter.set_cutoff_frequency(POSCONTROL_VEL_ERROR_CUTOFF_FREQ);
 }
 
-/// set_speed_z - sets maximum climb and descent rates
+/// set_max_speed_z - set the maximum climb and descent rates
 /// To-Do: call this in the main code as part of flight mode initialisation
-///     calc_leash_length_z should be called afterwards
-///     speed_down should be a negative number
-void AC_PosControl::set_speed_z(float speed_down, float speed_up)
+void AC_PosControl::set_max_speed_z(float speed_down, float speed_up)
 {
     // ensure speed_down is always negative
     speed_down = -fabsf(speed_down);
@@ -266,8 +258,8 @@ void AC_PosControl::set_speed_z(float speed_down, float speed_up)
     }
 }
 
-/// set_accel_z - set vertical acceleration in cm/s/s
-void AC_PosControl::set_accel_z(float accel_cmss)
+/// set_max_accel_z - set the maximum vertical acceleration in cm/s/s
+void AC_PosControl::set_max_accel_z(float accel_cmss)
 {
     if (fabsf(_accel_z_cms-accel_cmss) > 1.0f) {
         _accel_z_cms = accel_cmss;
@@ -641,8 +633,8 @@ void AC_PosControl::run_z_controller()
 /// lateral position controller
 ///
 
-/// set_accel_xy - set horizontal acceleration in cm/s/s
-void AC_PosControl::set_accel_xy(float accel_cmss)
+/// set_max_accel_xy - set the maximum horizontal acceleration in cm/s/s
+void AC_PosControl::set_max_accel_xy(float accel_cmss)
 {
     if (fabsf(_accel_cms-accel_cmss) > 1.0f) {
         _accel_cms = accel_cmss;
@@ -651,8 +643,8 @@ void AC_PosControl::set_accel_xy(float accel_cmss)
     }
 }
 
-/// set_speed_xy - set horizontal speed maximum in cm/s
-void AC_PosControl::set_speed_xy(float speed_cms)
+/// set_max_speed_xy - set the maximum horizontal speed maximum in cm/s
+void AC_PosControl::set_max_speed_xy(float speed_cms)
 {
     if (fabsf(_speed_cms-speed_cms) > 1.0f) {
         _speed_cms = speed_cms;
@@ -701,7 +693,7 @@ void AC_PosControl::set_target_to_stopping_point_xy()
 /// get_stopping_point_xy - calculates stopping point based on current position, velocity, vehicle acceleration
 ///     distance_max allows limiting distance to stopping point
 ///     results placed in stopping_position vector
-///     set_accel_xy() should be called before this method to set vehicle acceleration
+///     set_max_accel_xy() should be called before this method to set vehicle acceleration
 ///     set_leash_length() should have been called before this method
 void AC_PosControl::get_stopping_point_xy(Vector3f &stopping_point) const
 {
@@ -778,21 +770,21 @@ float AC_PosControl::get_lean_angle_max_cd() const
 }
 
 /// init_xy_controller - initialise the xy controller
+///     this should be called after setting the position target and the desired velocity and acceleration
 ///     sets target roll angle, pitch angle and I terms based on vehicle current lean angles
 ///     should be called once whenever significant changes to the position target are made
 ///     this does not update the xy target
-void AC_PosControl::init_xy_controller(bool reset_I)
+void AC_PosControl::init_xy_controller()
 {
     // set roll, pitch lean angle targets to current attitude
+    // todo: this should probably be based on the desired attitude not the current attitude
     _roll_target = _ahrs.roll_sensor;
     _pitch_target = _ahrs.pitch_sensor;
 
     // initialise I terms from lean angles
-    if (reset_I) {
-        // reset last velocity if this controller has just been engaged or dt is zero
-        lean_angles_to_accel(_accel_target.x, _accel_target.y);
-        _pid_vel_xy.set_integrator(_accel_target-_accel_desired);
-    }
+    _pid_vel_xy.reset_filter();
+    lean_angles_to_accel(_accel_target.x, _accel_target.y);
+    _pid_vel_xy.set_integrator(_accel_target-_accel_desired);
 
     // flag reset required in rate to accel step
     _flags.reset_desired_vel_to_pos = true;
@@ -871,7 +863,7 @@ void AC_PosControl::init_vel_controller_xyz()
     _roll_target = _ahrs.roll_sensor;
     _pitch_target = _ahrs.pitch_sensor;
 
-    // reset last velocity if this controller has just been engaged or dt is zero
+    _pid_vel_xy.reset_filter();
     lean_angles_to_accel(_accel_target.x, _accel_target.y);
     _pid_vel_xy.set_integrator(_accel_target);
 
@@ -1076,7 +1068,6 @@ void AC_PosControl::run_xy_controller(float dt, float ekfNavVelGainScaler)
     // get d
     vel_xy_d = _pid_vel_xy.get_d();
 
-
     // acceleration to correct for velocity error and scale PID output to compensate for optical flow measurement induced EKF noise
     accel_target.x = (vel_xy_p.x + vel_xy_i.x + vel_xy_d.x) * ekfNavVelGainScaler;
     accel_target.y = (vel_xy_p.y + vel_xy_i.y + vel_xy_d.y) * ekfNavVelGainScaler;
@@ -1122,6 +1113,7 @@ void AC_PosControl::accel_to_lean_angles(float accel_x_cmss, float accel_y_cmss,
     float accel_right, accel_forward;
 
     // rotate accelerations into body forward-right frame
+    // todo: this should probably be based on the desired heading not the current heading
     accel_forward = accel_x_cmss*_ahrs.cos_yaw() + accel_y_cmss*_ahrs.sin_yaw();
     accel_right = -accel_x_cmss*_ahrs.sin_yaw() + accel_y_cmss*_ahrs.cos_yaw();
 
@@ -1135,6 +1127,7 @@ void AC_PosControl::accel_to_lean_angles(float accel_x_cmss, float accel_y_cmss,
 void AC_PosControl::lean_angles_to_accel(float& accel_x_cmss, float& accel_y_cmss) const
 {
     // rotate our roll, pitch angles into lat/lon frame
+    // todo: this should probably be based on the desired attitude not the current attitude
     accel_x_cmss = (GRAVITY_MSS * 100) * (-_ahrs.cos_yaw() * _ahrs.sin_pitch() * _ahrs.cos_roll() - _ahrs.sin_yaw() * _ahrs.sin_roll()) / MAX(_ahrs.cos_roll()*_ahrs.cos_pitch(), 0.5f);
     accel_y_cmss = (GRAVITY_MSS * 100) * (-_ahrs.sin_yaw() * _ahrs.sin_pitch() * _ahrs.cos_roll() + _ahrs.cos_yaw() * _ahrs.sin_roll()) / MAX(_ahrs.cos_roll()*_ahrs.cos_pitch(), 0.5f);
 }
@@ -1214,7 +1207,7 @@ void AC_PosControl::check_for_ekf_z_reset()
 bool AC_PosControl::limit_vector_length(float& vector_x, float& vector_y, float max_length)
 {
     float vector_length = norm(vector_x, vector_y);
-    if ((vector_length > max_length) && is_positive(max_length)) {
+    if ((vector_length > max_length) && is_positive(vector_length)) {
         vector_x *= (max_length / vector_length);
         vector_y *= (max_length / vector_length);
         return true;

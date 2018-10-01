@@ -334,7 +334,7 @@ private:
     uint8_t register_compass(void);
 
     // load backend drivers
-    bool _add_backend(AP_Compass_Backend *backend, const char *name, bool external);
+    bool _add_backend(AP_Compass_Backend *backend);
     void _probe_external_i2c_compasses(void);
     void _detect_backends(void);
 
@@ -431,6 +431,8 @@ private:
         // saved to eeprom when offsets are saved allowing ram &
         // eeprom values to be compared as consistency check
         AP_Int32    dev_id;
+        AP_Int32    expected_dev_id;
+        int32_t detected_dev_id;
 
         AP_Int8     use_for_yaw;
 

@@ -23,6 +23,7 @@ import ardusub
 import quadplane
 import balancebot
 
+import examples
 from pysim import util
 from pymavlink import mavutil
 from pymavlink.generator import mavtemplate
@@ -33,7 +34,7 @@ def buildlogs_dirpath():
 
 
 def buildlogs_path(path):
-    '''return a string representing path in the buildlogs directory'''
+    """return a string representing path in the buildlogs directory"""
     bits = [buildlogs_dirpath()]
     if isinstance(path, list):
         bits.extend(path)
@@ -131,7 +132,7 @@ def build_devrelease():
 
 def build_examples():
     """Build examples."""
-    for target in 'px4-v2', 'navio':
+    for target in 'fmuv2', 'px4-v2', 'navio', 'linux':
         print("Running build.examples for %s" % target)
         try:
             util.build_examples(target)
@@ -142,6 +143,38 @@ def build_examples():
 
     return True
 
+def build_unit_tests():
+    """Build tests."""
+    for target in ['linux']:
+        print("Running build.unit_tests for %s" % target)
+        try:
+            util.build_tests(target)
+        except Exception as e:
+            print("Failed build.unit_tests on board=%s" % target)
+            print(str(e))
+            return False
+
+    return True
+
+def run_unit_test(test):
+    print("Running (%s)" % test)
+    subprocess.check_call([test])
+
+
+def run_unit_tests():
+    binary_dir = util.reltopdir(os.path.join('build',
+                                             'linux',
+                                             'tests',
+                                             ))
+    tests = glob.glob("%s/*" % binary_dir)
+    success = True
+    for test in tests:
+        try:
+            run_unit_test(test)
+        except Exception as e:
+            print("Exception running (%s): %s" % (test, e.message))
+            success = False
+    return success
 
 def param_parse_filepath():
     return util.reltopdir('Tools/autotest/param_metadata/param_parse.py')
@@ -358,14 +391,23 @@ def run_step(step):
     if step == 'build.DevRelease':
         return build_devrelease()
 
-    if step == 'build.Examples':
+    if step == 'build.examples':
         return build_examples()
+
+    if step == 'run.examples':
+        return examples.run_examples(debug=opts.debug, valgrind=False, gdb=False)
 
     if step == 'build.Parameters':
         return build_parameters()
 
     if step == 'convertgpx':
         return convert_gpx()
+
+    if step == 'build.unit_tests':
+        return build_unit_tests()
+
+    if step == 'run.unit_tests':
+        return run_unit_tests()
 
     raise RuntimeError("Unknown step %s" % step)
 
@@ -627,8 +669,12 @@ if __name__ == "__main__":
         'build.All',
         'build.Binaries',
         # 'build.DevRelease',
-        'build.Examples',
         'build.Parameters',
+
+        'build.unit_tests',
+        'run.unit_tests',
+        'build.examples',
+        'run.examples',
 
         'build.ArduPlane',
         'defaults.ArduPlane',

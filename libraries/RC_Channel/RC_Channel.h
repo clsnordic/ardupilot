@@ -5,9 +5,6 @@
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 
-#define RC_CHANNEL_TYPE_ANGLE       0
-#define RC_CHANNEL_TYPE_RANGE       1
-
 #define NUM_RC_CHANNELS 16
 
 /// @class	RC_Channel
@@ -31,8 +28,14 @@ public:
         RC_IGNORE_OVERRIDES = (1 << 1), // MAVLink overrides
     };
 
+    enum ChannelType {
+        RC_CHANNEL_TYPE_ANGLE = 0,
+        RC_CHANNEL_TYPE_RANGE = 1,
+    };
+
     // setup the control preferences
     void        set_range(uint16_t high);
+    uint16_t    get_range() const { return high_in; }
     void        set_angle(uint16_t angle);
     bool        get_reverse(void) const;
     void        set_default_dead_zone(int16_t dzone);
@@ -77,7 +80,7 @@ public:
     void       set_control_in(int16_t val) { control_in = val;}
 
     void       clear_override();
-    void       set_override(const uint16_t v, const uint32_t timestamp_us=0);
+    void       set_override(const uint16_t v, const uint32_t timestamp_us);
     bool       has_override() const;
 
     // get control input with zero deadzone
@@ -97,9 +100,9 @@ public:
 
     // set and save trim if changed
     void       set_and_save_radio_trim(int16_t val) { radio_trim.set_and_save_ifchanged(val);}
-    
-    bool min_max_configured() const;
-    
+
+    ChannelType get_type(void) const { return type_in; }
+
     AP_Int16    option; // e.g. activate EPM gripper / enable fence
 
     // auxillary switch support:
@@ -134,7 +137,7 @@ public:
         RETRACT_MOUNT =       27, // Retract Mount
         RELAY =               28, // Relay pin on/off (only supports first relay)
         LANDING_GEAR =        29, // Landing gear controller
-        LOST_COPTER_SOUND =   30, // Play lost copter sound
+        LOST_VEHICLE_SOUND =  30, // Play lost vehicle sound
         MOTOR_ESTOP =         31, // Emergency Stop Switch
         MOTOR_INTERLOCK =     32, // Motor On/Off switch
         BRAKE =               33, // Brake flight mode
@@ -162,6 +165,8 @@ public:
         GUIDED       =        55, // guided mode
         LOITER       =        56, // loiter mode
         FOLLOW       =        57, // follow mode
+        CLEAR_WP     =        58, // clear waypoints
+        SIMPLE       =        59, // simple mode
         // if you add something here, make sure to update the documentation of the parameter in RC_Channel.cpp!
         // also, if you add an option >255, you will need to fix duplicate_options_exist
     };
@@ -181,8 +186,13 @@ protected:
     virtual void init_aux_function(aux_func_t ch_option, aux_switch_pos_t);
     virtual void do_aux_function(aux_func_t ch_option, aux_switch_pos_t);
 
-    void do_aux_function_relay(uint8_t relay, bool val);
     void do_aux_function_camera_trigger(const aux_switch_pos_t ch_flag);
+    void do_aux_function_clear_wp(const aux_switch_pos_t ch_flag);
+    void do_aux_function_gripper(const aux_switch_pos_t ch_flag);
+    void do_aux_function_lost_vehicle_sound(const aux_switch_pos_t ch_flag);
+    void do_aux_function_rc_override_enable(const aux_switch_pos_t ch_flag);
+    void do_aux_function_relay(uint8_t relay, bool val);
+    void do_aux_function_sprayer(const aux_switch_pos_t ch_flag);
 
     typedef int8_t modeswitch_pos_t;
     virtual void mode_switch_changed(modeswitch_pos_t new_pos) {
@@ -205,7 +215,7 @@ private:
     AP_Int8     reversed;
     AP_Int16    dead_zone;
 
-    uint8_t     type_in;
+    ChannelType type_in;
     int16_t     high_in;
 
     // the input channel this corresponds to
@@ -214,9 +224,6 @@ private:
     // overrides
     uint16_t override_value;
     uint32_t last_override_time;
-
-    // bits set when channel has been identified as configured
-    static uint32_t configured_mask;
 
     int16_t pwm_to_angle();
     int16_t pwm_to_angle_dz(uint16_t dead_zone);
@@ -258,6 +265,7 @@ private:
 
     void reset_mode_switch();
     void read_mode_switch();
+
 };
 
 
@@ -319,6 +327,14 @@ public:
     // has_valid_input should be pure-virtual when Plane is converted
     virtual bool has_valid_input() const { return false; };
 
+    bool gcs_overrides_enabled() const { return _gcs_overrides_enabled; }
+    void set_gcs_overrides_enabled(bool enable) {
+        _gcs_overrides_enabled = enable;
+        if (!_gcs_overrides_enabled) {
+            clear_overrides();
+        }
+    }
+
 private:
     static RC_Channels *_singleton;
     // this static arrangement is to avoid static pointers in AP_Param tables
@@ -334,6 +350,8 @@ private:
     virtual int8_t flight_mode_channel_number() const = 0;
     RC_Channel *flight_mode_channel();
 
+    // Allow override by default at start
+    bool _gcs_overrides_enabled = true;
 };
 
 RC_Channels &rc();

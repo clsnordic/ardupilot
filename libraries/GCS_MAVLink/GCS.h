@@ -254,8 +254,6 @@ protected:
     virtual bool accept_packet(const mavlink_status_t &status, mavlink_message_t &msg) { return true; }
     virtual AP_Mission *get_mission() = 0;
     virtual AP_Rally *get_rally() const = 0;
-    virtual Compass *get_compass() const = 0;
-    virtual class AP_Camera *get_camera() const = 0;
     virtual AP_AdvancedFailsafe *get_advanced_failsafe() const { return nullptr; };
     virtual AP_VisualOdom *get_visual_odom() const { return nullptr; }
     virtual bool set_mode(uint8_t mode) = 0;
@@ -648,7 +646,7 @@ public:
 
     // get the VFR_HUD throttle
     int16_t get_hud_throttle(void) const { return num_gcs()>0?chan(0).vfr_hud_throttle():0; }
-    
+
 private:
 
     static GCS *_singleton;
@@ -664,6 +662,11 @@ private:
     static const uint8_t _status_capacity = 30;
 #endif
 
+    // a lock for the statustext queue, to make it safe to use send_text()
+    // from multiple threads
+    HAL_Semaphore _statustext_sem;
+
+    // queue of outgoing statustext messages
     ObjectArray<statustext_t> _statustext_queue{_status_capacity};
 
     // true if we are running short on time in our main loop
