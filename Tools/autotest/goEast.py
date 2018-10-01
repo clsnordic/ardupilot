@@ -16,16 +16,19 @@ vehicle = connect('127.0.0.1:14551', wait_ready=True)
 # speed yawrate 0b0000011111000111
 
 #(math.cos(2*pi/n*x)*r,math.sin(2*pi/n*x)*r) for x in xrange(0,n+1)
-x=150
+x=100
 for i in range(0,x):
-    tNorth = (math.cos(2 * math.pi / x * i) * 50)
-    tEast = (math.sin(2*math.pi/x*i)*50)
+    if 50 <= i < 75:
+        fast = 0b0000011111111000
+        
+    else:
+        fast = 0b0000111111111000
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
         0,       # time_boot_ms (not used)
         0, 0,    # target_system, target_component
         mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
-        0b0000111111111000, # type_mask (only speeds enabled)
-        tNorth, tEast, -10, # x, y, z positions
+        fast, # type_mask (only speeds enabled)
+        0, i, -10, # x, y, z positions
         #0, 0, -10,  # x, y, z positions
         0, 1, 0, # x, y, z velocity in m/s
         0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
@@ -33,12 +36,12 @@ for i in range(0,x):
     # send command to vehicle
     vehicle.send_mavlink(msg)
     loc = vehicle.location.local_frame
-    dNorth = loc.north - tNorth
-    dEast = loc.east - tEast
-    while math.sqrt(math.pow(dNorth,2) + math.pow(dEast,2)) > 4:
+    dNorth = loc.north - 0
+    dEast = loc.east - i
+    while math.sqrt(math.pow(dNorth,2) + math.pow(dEast,2)) > 1:
         loc = vehicle.location.local_frame
-        dNorth = loc.north - tNorth
-        dEast = loc.east - tEast
+        dNorth = loc.north - 0
+        dEast = loc.east - i
         time.sleep(0.1)
     print vehicle.location.local_frame
    # print("message send")

@@ -5,20 +5,37 @@ import time
 
 # Connect to the Vehicle.
 print("Connecting to vehicle on: 127.0.0.1:5762")
-vehicle = connect('tcp:127.0.0.1:5762', wait_ready=True)
+vehicle = connect('127.0.0.1:14551', wait_ready=True)
 
 print "\nSet Vehicle.mode = GUIDED (currently: %s)" % vehicle.mode.name 
-time.sleep(30)
+lat = 58.814901
+lon = 5.645911
+alt = 50
+msg = vehicle.message_factory.set_gps_global_origin_encode(
+        0, 
+        lat, lon, alt)    # param 5 ~ 7 latitude, longitude, altitude
+vehicle.send_mavlink(msg)
+
+msg = vehicle.message_factory.command_long_encode(
+        0, 0,    # target system, target component
+        mavutil.mavlink.MAV_CMD_DO_SET_HOME, #command
+        0,    #confirmation
+        0,    # param 1, (1=use current location, 0=use specified location)
+        0,    # param 2, unused
+        0,    # param 3,unused
+        0,    # param 4, unused
+        lat, lon, alt)    # param 5 ~ 7 latitude, longitude, altitude
+vehicle.send_mavlink(msg)
 vehicle.mode = VehicleMode("GUIDED")
 while not vehicle.mode.name=='GUIDED':  #Wait until mode has changed
     print " Waiting for mode change ..."
     time.sleep(1)
 
-
+time.sleep(100)
 # Check that vehicle is armable
-while not vehicle.is_armable:
-    print " Waiting for vehicle to initialise..."
-    time.sleep(1)
+#while not vehicle.is_armable:
+#    print " Waiting for vehicle to initialise..."
+#    time.sleep(1)
     # If required, you can provide additional information about initialisation
     # using `vehicle.gps_0.fix_type` and `vehicle.mode.name`.
     
@@ -39,7 +56,7 @@ while True:
         print "Reached target altitude"
         break
     time.sleep(1)
-
+    time.sleep(100)
 for i in range(0,5):
 	nPos = [20,20,30,30,40]
 	ePos = [0,10,10,20,20]
