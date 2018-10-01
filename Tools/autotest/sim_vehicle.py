@@ -392,6 +392,8 @@ def do_build(vehicledir, opts, frame_options):
 
     _, sts = run_cmd_blocking("Building %s" % build_target, build_cmd)
     if sts != 0:
+        progress("Build failed")
+        sys.exit(1)
         progress("Build failed; cleaning and rebuilding")
         run_cmd_blocking("Cleaning", ["make", "clean"])
         _, sts = run_cmd_blocking("Building %s" % build_target, build_cmd)
