@@ -1187,6 +1187,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         bool acc_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_ACC_IGNORE;
         bool yaw_ignore      = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE;
         bool yaw_rate_ignore = packet.type_mask & MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE;
+        bool fastWaypoint = yaw_rate_ignore;
+        yaw_rate_ignore = true;
 
         //hal.console->printf("yaw_ignore: %d", yaw_ignore);
         //hal.console->printf("\nyaw_rate_ignore: %d, yaw rate value: %f\n", yaw_rate_ignore, packet.yaw_rate);
@@ -1249,7 +1251,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             copter.mode_guided.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, 0);
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
 
-            copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, 1);
+            copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, fastWaypoint, yaw_rate_cds, 1);
         }
 
         break;

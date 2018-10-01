@@ -208,7 +208,11 @@ bool AC_WPNav::set_wp_destination(const Vector3f& destination, bool terrain_alt)
 	//TODO change to current position
     // if waypoint controller is active use the existing position target as the origin
     if ((AP_HAL::millis() - _wp_last_update) < 1000) {
-        origin = _pos_control.get_pos_target();
+        //origin = _pos_control.get_pos_target();
+        /* We change the origin to be our current position as this is what the pathplanner will use
+         *
+         */
+        origin = _inav.get_position();
     } else {
         // if waypoint controller is not active, set origin to reasonable stopping point (using curr pos and velocity)
         _pos_control.get_stopping_point_xy(origin);
@@ -216,13 +220,13 @@ bool AC_WPNav::set_wp_destination(const Vector3f& destination, bool terrain_alt)
     }
 
     // convert origin to alt-above-terrain
-    if (terrain_alt) {
+    /*if (terrain_alt) {
         float origin_terr_offset;
         if (!get_terrain_offset(origin_terr_offset)) {
             return false;
         }
         origin.z -= origin_terr_offset;
-    }
+    } */
 
     // set origin and destination
     return set_wp_origin_and_destination(origin, destination, terrain_alt);
@@ -243,7 +247,7 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     // store origin and destination locations
     _origin = origin;
     _destination = destination;
-    _terrain_alt = terrain_alt;
+    _terrain_alt = false;
     Vector3f pos_delta = _destination - _origin;
 
     _track_length = pos_delta.length(); // get track length
@@ -263,26 +267,40 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     calculate_wp_leash_length();
 
     // get origin's alt-above-terrain
-    float origin_terr_offset = 0.0f;
+    /*float origin_terr_offset = 0.0f;
     if (terrain_alt) {
         if (!get_terrain_offset(origin_terr_offset)) {
             return false;
         }
-    }
+    } */
 
     // initialise intermediate point to the origin
-    _pos_control.set_pos_target(origin + Vector3f(0,0,origin_terr_offset));
+    _pos_control.set_pos_target(origin);
+
     _track_desired = 0;             // target is at beginning of track
+    //_track_desired = 500;
     _flags.reached_destination = false;
-    _flags.fast_waypoint = false;   // default waypoint back to slow
+    //_flags.fast_waypoint = false;   // default waypoint back to slow
+
+    //TODOCLS try a fast one to see desired vel
+    _flags.fast_waypoint = false;
     _flags.slowing_down = false;    // target is not slowing down yet
     _flags.segment_type = SEGMENT_STRAIGHT;
-    _flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
+    _flags.new_wp_destination = false;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
     _flags.wp_yaw_set = false;
+
 
     // initialise the limited speed to current speed along the track
     //const Vector3f curr_vel = (_extNav.extNavPosEnabled() == 1 ? _extNav.get_velocity() : _inav.get_velocity());
     const Vector3f &curr_vel = _inav.get_velocity();
+    if(terrain_alt)
+    {
+
+        _pos_control.set_desired_velocity_xy(curr_vel.x, curr_vel.y);
+        _flags.fast_waypoint = true;
+    } else
+        _pos_control.set_desired_velocity_xy(0.0f, 0.0f);
+
     // get speed along track (note: we convert vertical speed into horizontal speed equivalent)
     float speed_along_track = curr_vel.x * _pos_delta_unit.x + curr_vel.y * _pos_delta_unit.y + curr_vel.z * _pos_delta_unit.z;
     _limited_speed_xy_cms = constrain_float(speed_along_track,0,_wp_speed_cms);
@@ -459,6 +477,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
             // "fast" waypoints are complete once the intermediate point reaches the destination
             if (_flags.fast_waypoint) {
                 _flags.reached_destination = true;
+                gcs().send_text(MAV_SEVERITY_INFO, "Reached WP!");
             }else{
                 // regular waypoints also require the copter to be within the waypoint radius
                 Vector3f dist_to_dest = (curr_pos - Vector3f(0,0,terr_offset)) - _destination;
@@ -483,7 +502,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         }
     }
 
-    DataFlash_Class::instance()->Log_Write("POSFOL", "TimeUS,xTrac,yTrac,zTrac,xTrack", "Qffff",
+    DataFlash_Class::instance()->Log_Write("POSF", "TimeUS,xTrac,yTrac,zTrac,xTrack", "Qffff",
                                                AP_HAL::micros64(),
                                                (double)track_error.x,
                                                (double)track_error.y,

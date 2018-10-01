@@ -104,6 +104,8 @@ void Copter::ModeGuided::pos_control_start()
     // no need to check return status because terrain data is not used
     wp_nav->set_wp_destination(stopping_point, false);
 
+
+
     // initialise yaw
     auto_yaw.set_mode_to_default(false);
     //auto_yaw.set_mode(AUTO_YAW_LOOK_AT_NEXT_WP);
@@ -207,10 +209,11 @@ bool Copter::ModeGuided::set_destination(const Vector3f& destination, bool use_y
 #endif
 
     // set yaw state
-    set_yaw_state(use_yaw, yaw_cd, use_yaw_rate, yaw_rate_cds, relative_yaw);
+    set_yaw_state(use_yaw, yaw_cd, false, yaw_rate_cds, relative_yaw);
 
     // no need to check return status because terrain data is not used
-    wp_nav->set_wp_destination(destination, false);
+    //TODO CLS Now use_yaw_rate is the flag for going fast on a waypoint or not. true = go fast
+    wp_nav->set_wp_destination(destination, use_yaw_rate);
 
     // log target
     copter.Log_Write_GuidedTarget(guided_mode, destination, Vector3f());

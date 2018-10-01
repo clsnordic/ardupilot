@@ -1027,6 +1027,7 @@ void AC_PosControl::run_xy_controller(float dt, float ekfNavVelGainScaler)
         // TODO: replace the leash length with a user definable maximum position correction
         if (limit_vector_length(_pos_error.x, _pos_error.y, _leash))
         {
+
             _pos_target.x = curr_pos.x + _pos_error.x;
             _pos_target.y = curr_pos.y + _pos_error.y;
         }
@@ -1107,6 +1108,12 @@ void AC_PosControl::run_xy_controller(float dt, float ekfNavVelGainScaler)
 
     // update angle targets that will be passed to stabilize controller
     accel_to_lean_angles(_accel_target.x, _accel_target.y, _roll_target, _pitch_target);
+
+    DataFlash_Class::instance()->Log_Write("POSE", "TimeUS,pErrX,pErrY,dist", "Qfff",
+                                                   AP_HAL::micros64(),
+                                                   (double)_pos_error.x,
+                                                   (double)_pos_error.y,
+                                                   (double)_distance_to_target);
 }
 
 // get_lean_angles_to_accel - convert roll, pitch lean angles to lat/lon frame accelerations in cm/s/s
